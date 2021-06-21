@@ -19,6 +19,10 @@ namespace APIGateway.Core.Chatbot.Elements
 
         [JsonProperty("activity")] public string activity { get; set; }
 
+        [JsonProperty("operatorGroupId")] public string operatorGroupId { get; set; }
+
+        [JsonProperty("userId")] public int userId { get; set; }
+
         public SuggestedAction suggestedActions { get; set; }
 
         public Dictionary<string,string> callParams { get; set; }
@@ -36,11 +40,22 @@ namespace APIGateway.Core.Chatbot.Elements
             return msg;
         }
 
+        public static SendActivity CreateForwardActivity(long sessionId, int userId)
+        {
+            return new SendActivity
+            {
+                type = "Forward",
+                attachments = new List<Attachment>(),
+                sessionId = sessionId.ToString(),
+                userId = userId
+            };
+        }
+
         public static SendActivity Create(long sessionId)
         {
             return new SendActivity
             {
-                timestamp = DateTime.Now.AddMilliseconds(2000).ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
+                timestamp = DateTime.Now.AddMilliseconds(100).ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
                 type = "message",
                 attachments = new List<Attachment>(),
                 sessionId = sessionId.ToString()

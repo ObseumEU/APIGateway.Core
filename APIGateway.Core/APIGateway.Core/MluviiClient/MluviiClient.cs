@@ -96,6 +96,12 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
+        public async Task<IRestResponse> GetAvaliableOperators(int chatbotID, string callbackUrl)
+        {
+            var request = await CreateRequest($"api/v1/Chatbot/{chatbotID}?callbackUrl={callbackUrl}", Method.PUT);
+            return (await ExecuteAsync<object>(request, true)).Response;
+        }
+
         public async Task<IRestResponse> AddTagToSession(int tagID, long sessionID)
         {
             var request = await CreateRequest($"/api/{Version}/Sessions/{sessionID}/tags/{tagID}", Method.PUT);
@@ -140,6 +146,15 @@ namespace APIGateway.Core.MluviiClient
                     (!string.IsNullOrEmpty(source) ? $"&Source={source}" : ""),
                     Method.GET);
             return await ExecuteAsync<List<SessionModel>>(request, verbose);
+        }
+
+        public async Task<(List<mluvii.ApiModels.Users.OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false)
+        {
+            var request =
+                await CreateRequest(
+                    $"/api/{Version}//api/v1/Users/operatorStates",
+                    Method.GET);
+            return await ExecuteAsync<List<mluvii.ApiModels.Users.OperatorStateModel>>(request, verbose);
         }
 
         public async Task<(List<WebhookModel> value, IRestResponse response)> GetWebhooks()
@@ -241,6 +256,7 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
+    
         public async Task<IRestResponse> SendChatbotActivity(int chatbotID, object activity)
         {
             var request = await CreateRequest($"/api/{Version}/Chatbot/{chatbotID}/activity", Method.POST);

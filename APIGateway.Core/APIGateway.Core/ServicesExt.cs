@@ -8,6 +8,7 @@ using APIGateway.Core.Chatbot;
 using APIGateway.Core.Haproxy;
 using APIGateway.Core.Jobs;
 using APIGateway.Core.MluviiClient;
+using APIGateway.Core.RoutingService;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.Extensions.Configuration;

@@ -16,7 +16,7 @@ namespace APIGateway.Core.Chatbot
     {
         private readonly ApiGatewayCoreOptions _coreOptions;
         public readonly ILogger _log;
-        private readonly MluviiClient.MluviiClient _mluviiClient;
+        public readonly MluviiClient.MluviiClient mluviiClient;
         private readonly ICacheService _cache;
         private readonly ChatbotOptions _options;
         public bool LoadOnaStartCallParams = true;
@@ -32,7 +32,7 @@ namespace APIGateway.Core.Chatbot
         {
             _options = options?.Value;
             _log = logger;
-            _mluviiClient = mluviiClient;
+            this.mluviiClient = mluviiClient;
             _cache = cache;
             _coreOptions = coreOptions?.Value;
         }
@@ -108,7 +108,7 @@ namespace APIGateway.Core.Chatbot
 
             try
             {
-                return await _mluviiClient.SetChatbotCallbackURL(_options.ChatbotID,
+                return await mluviiClient.SetChatbotCallbackURL(_options.ChatbotID,
                     _coreOptions.Domain + "/" + _options.CallBackURL);
             }
             catch (Exception e)
@@ -121,17 +121,33 @@ namespace APIGateway.Core.Chatbot
 
         public async Task SendActivity(object activity)
         {
-            await _mluviiClient.SendChatbotActivity(_options.ChatbotID, activity);
+            await mluviiClient.SendChatbotActivity(_options.ChatbotID, activity);
         }
 
         public async Task SendText(ActivityBase activity, string text)
         {
-            await _mluviiClient.SendChatbotActivity(_options.ChatbotID, Elements.SendActivity.CreateTextActivity(activity, text));
+            await mluviiClient.SendChatbotActivity(_options.ChatbotID, Elements.SendActivity.CreateTextActivity(activity, text));
         }
 
         public async Task SendText(string text)
         {
-            await _mluviiClient.SendChatbotActivity(_options.ChatbotID, Elements.SendActivity.CreateTextActivity(currentActivity, text));
+            await mluviiClient.SendChatbotActivity(_options.ChatbotID, Elements.SendActivity.CreateTextActivity(currentActivity, text));
+        }
+
+        public async Task Forward(ActivityBase activity, int userId)
+        {
+            if(activity.sessionId == null)
+            {
+                _log.LogError("Cannot redirect null sessionId on chatbot.");
+                return;
+            }
+
+            await Forward(activity.sessionId.Value, userId);
+        }
+
+        public async Task Forward(long sessionId, int userId)
+        {
+            await mluviiClient.SendChatbotActivity(_options.ChatbotID, Elements.SendActivity.CreateForwardActivity(sessionId, userId));
         }
 
         public async Task<bool> IsHealth()
