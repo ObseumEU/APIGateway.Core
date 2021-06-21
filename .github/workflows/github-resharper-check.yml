@@ -14,4 +14,4 @@ jobs:
         uses: glassechidna/resharper-action@master
         working-directory: ../../
         with:
-          solution: ./APIGateway.Core.sln
+          solution: ../../APIGateway.Core.sln
