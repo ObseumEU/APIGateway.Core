@@ -1,19 +1,16 @@
-on: [push]
+name: ReSharper
+
+on:
+  pull_request: {}
 
 jobs:
-  inspection:
-    runs-on: ubuntu-latest # or macos-latest, windows-latest
-    name: Inspection
+  resharper:
+    runs-on: windows-latest
     steps:
-      - name: Checkout
+      - name: checkout
         uses: actions/checkout@v2
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+      
+      - name: resharper
+        uses: glassechidna/resharper-action@master
         with:
-          dotnet-version: '5.0.x' # or 3.1.x
-      - name: Restore
-        run: dotnet restore
-      - name: Inspect code
-        uses: muno92/resharper_inspectcode@1.0.0
-        with:
-          solution: APIGateway.Core.sln
+          solution: ../../../APIGateway.Core.sln
