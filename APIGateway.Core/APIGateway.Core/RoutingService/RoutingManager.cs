@@ -53,7 +53,11 @@ namespace APIGateway.Core.RoutingService
         public async Task<RoutingRequest> OnRoutingRequestReceived(string sharedIdentificator, string employeeId, string markerId)
         {
             var operatorId = _operatorToEmployee.EmployeeToOperator(employeeId);
-            return await _routingRepository.SetResultOfRoutingRequest(sharedIdentificator, operatorId);
+
+            if(!string.IsNullOrEmpty(operatorId))
+                return await _routingRepository.SetResultOfRoutingRequest(sharedIdentificator, operatorId);
+            else
+                return await _routingRepository.SetResultOfRoutingRequest(sharedIdentificator, "unknown");
         }
 
         public async Task<List<RoutingRequest>> GetWaitingRoutingRequests()

@@ -152,7 +152,7 @@ namespace APIGateway.Core.MluviiClient
         {
             var request =
                 await CreateRequest(
-                    $"/api/{Version}//api/v1/Users/operatorStates",
+                    $"/api/{Version}/Users/operatorStates",
                     Method.GET);
             return await ExecuteAsync<List<mluvii.ApiModels.Users.OperatorStateModel>>(request, verbose);
         }

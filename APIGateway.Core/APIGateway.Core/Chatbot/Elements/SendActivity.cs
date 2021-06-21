@@ -40,12 +40,19 @@ namespace APIGateway.Core.Chatbot.Elements
             return msg;
         }
 
+        public static SendActivity CreateTextActivity(long sessionId, string text)
+        {
+            var msg = Create(sessionId);
+            msg.attachments = new List<Attachment>();
+            msg.text = text;
+            return msg;
+        }
+
         public static SendActivity CreateForwardActivity(long sessionId, int userId)
         {
             return new SendActivity
             {
-                type = "Forward",
-                attachments = new List<Attachment>(),
+                activity = "Forward",
                 sessionId = sessionId.ToString(),
                 userId = userId
             };

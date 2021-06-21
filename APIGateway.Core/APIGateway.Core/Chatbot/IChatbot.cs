@@ -11,5 +11,6 @@ namespace APIGateway.Core.Chatbot
         Task<IRestResponse> SetupChatbotInMluvii();
         Task SendActivity(object activity);
         Task<bool> IsHealth();
+        Task Forward(long sessionId, int userId);
     }
 }
