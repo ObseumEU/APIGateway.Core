@@ -13,4 +13,4 @@ jobs:
       - name: resharper
         uses: glassechidna/resharper-action@master
         with:
-          solution: APIGateway.Core.sln
+          solution: ../../../APIGateway.Core.sln
