@@ -2,15 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using System.Web;
 using APIGateway.Core.Cache;
-using APIGateway.Core.MluviiClient.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using mluvii.ApiModels.Sessions;
+using mluvii.ApiModels.Users;
 using mluvii.ApiModels.Webhooks;
 using RestSharp;
 
@@ -60,7 +58,8 @@ namespace APIGateway.Core.MluviiClient
 
         public string GetSessionUrl(long sessionId)
         {
-            return _coreOptions.Value.Domain + $"/app/{_credentials.Company}/{_credentials.Tenant}/sessions/{sessionId}";
+            return _coreOptions.Value.Domain +
+                   $"/app/{_credentials.Company}/{_credentials.Tenant}/sessions/{sessionId}";
         }
 
         public async Task<IRestResponse> AddUserToDepartment(int departmentId, int userId)
@@ -114,7 +113,7 @@ namespace APIGateway.Core.MluviiClient
             return await ExecuteAsync<SessionModel>(request, true);
         }
 
-        public async Task<(IDictionary<string,string> value, IRestResponse response)> GetCallParams(long sessionId)
+        public async Task<(IDictionary<string, string> value, IRestResponse response)> GetCallParams(long sessionId)
         {
             var session = await GetSession(sessionId);
             if (!session.response.IsSuccessful)
@@ -148,13 +147,13 @@ namespace APIGateway.Core.MluviiClient
             return await ExecuteAsync<List<SessionModel>>(request, verbose);
         }
 
-        public async Task<(List<mluvii.ApiModels.Users.OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false)
+        public async Task<(List<OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false)
         {
             var request =
                 await CreateRequest(
                     $"/api/{Version}/Users/operatorStates",
                     Method.GET);
-            return await ExecuteAsync<List<mluvii.ApiModels.Users.OperatorStateModel>>(request, verbose);
+            return await ExecuteAsync<List<OperatorStateModel>>(request, verbose);
         }
 
         public async Task<(List<WebhookModel> value, IRestResponse response)> GetWebhooks()
@@ -256,7 +255,7 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-    
+
         public async Task<IRestResponse> SendChatbotActivity(int chatbotID, object activity)
         {
             var request = await CreateRequest($"/api/{Version}/Chatbot/{chatbotID}/activity", Method.POST);

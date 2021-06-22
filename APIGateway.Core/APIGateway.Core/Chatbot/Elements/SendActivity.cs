@@ -25,7 +25,7 @@ namespace APIGateway.Core.Chatbot.Elements
 
         public SuggestedAction suggestedActions { get; set; }
 
-        public Dictionary<string,string> callParams { get; set; }
+        public Dictionary<string, string> callParams { get; set; }
 
         public static SendActivity Create(ActivityBase baseActivity)
         {

@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using APIGateway.Core.Cache;
 using APIGateway.Core.Chatbot.Activities;
-using APIGateway.Core.MluviiClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RestSharp;
@@ -14,18 +12,18 @@ namespace APIGateway.Core.Chatbot
 {
     public abstract class ChatbotBase : IChatbotBase
     {
-        private readonly ApiGatewayCoreOptions _coreOptions;
-        public readonly ILogger _log;
-        public readonly MluviiClient.MluviiClient mluviiClient;
-        private readonly ICacheService _cache;
-        private readonly ChatbotOptions _options;
-        public bool LoadOnaStartCallParams = true;
-        public Dictionary<string, string> CallParams;
-        public bool IsDebug = false;
         public const string IS_DEBUG_KEY = "isDebug";
         public const string CALL_PARAMS_KEY = "callparams";
+        private readonly ICacheService _cache;
+        private readonly ApiGatewayCoreOptions _coreOptions;
+        public readonly ILogger _log;
+        private readonly ChatbotOptions _options;
+        public readonly MluviiClient.MluviiClient mluviiClient;
+        public Dictionary<string, string> CallParams;
+        private ActivityBase currentActivity;
+        public bool IsDebug;
+        public bool LoadOnaStartCallParams = true;
         public long? SessionId;
-        private ActivityBase currentActivity = null;
 
         public ChatbotBase(ILogger logger, IOptions<ChatbotOptions> options, MluviiClient.MluviiClient mluviiClient,
             IOptions<ApiGatewayCoreOptions> coreOptions, ICacheService cache)
@@ -50,7 +48,7 @@ namespace APIGateway.Core.Chatbot
             if (SessionId == null)
                 throw new Exception("Save params is possible only after OnReceiveActivity");
 
-            if(item == null)
+            if (item == null)
                 return;
 
             _cache.Set($"{key}-{SessionId}", item, minutesLifetime);
@@ -72,7 +70,7 @@ namespace APIGateway.Core.Chatbot
 
             if (activity.Activity == "ConversationStarted")
             {
-                if(LoadOnaStartCallParams)
+                if (LoadOnaStartCallParams)
                     await GetCallParams(activity);
 
                 await OnReceiveConversationStarted(activity);
@@ -83,20 +81,14 @@ namespace APIGateway.Core.Chatbot
                 CallParams = activity.callParams;
                 var debugCallParam = CallParams.FirstOrDefault(d => d.Key.ToLower().Equals("debug"));
                 IsDebug = debugCallParam.Value != null && debugCallParam.Value.ToLower().Equals("true");
-                SaveLocalSessionParam(IS_DEBUG_KEY, IsDebug, 120);
-                SaveLocalSessionParam(CALL_PARAMS_KEY, CallParams, 120);
-                foreach (var callParam in CallParams)
-                {
-                    SaveLocalSessionParam(callParam.Key, callParam);
-                }
+                SaveLocalSessionParam(IS_DEBUG_KEY, IsDebug);
+                SaveLocalSessionParam(CALL_PARAMS_KEY, CallParams);
+                foreach (var callParam in CallParams) SaveLocalSessionParam(callParam.Key, callParam);
 
                 await OnReceiveCallParams(activity);
             }
 
-            if (activity.Activity == "Text")
-            {
-                await OnReceiveText(activity);
-            }
+            if (activity.Activity == "Text") await OnReceiveText(activity);
 
             await OnReceiveActivityBase(activity);
         }
@@ -126,17 +118,19 @@ namespace APIGateway.Core.Chatbot
 
         public async Task SendText(ActivityBase activity, string text)
         {
-            await mluviiClient.SendChatbotActivity(_options.ChatbotID, Elements.SendActivity.CreateTextActivity(activity, text));
+            await mluviiClient.SendChatbotActivity(_options.ChatbotID,
+                Elements.SendActivity.CreateTextActivity(activity, text));
         }
 
         public async Task SendText(string text)
         {
-            await mluviiClient.SendChatbotActivity(_options.ChatbotID, Elements.SendActivity.CreateTextActivity(currentActivity, text));
+            await mluviiClient.SendChatbotActivity(_options.ChatbotID,
+                Elements.SendActivity.CreateTextActivity(currentActivity, text));
         }
 
         public async Task Forward(ActivityBase activity, int userId)
         {
-            if(activity.sessionId == null)
+            if (activity.sessionId == null)
             {
                 _log.LogError("Cannot redirect null sessionId on chatbot.");
                 return;
@@ -147,7 +141,8 @@ namespace APIGateway.Core.Chatbot
 
         public async Task Forward(long sessionId, int userId)
         {
-            await mluviiClient.SendChatbotActivity(_options.ChatbotID, Elements.SendActivity.CreateForwardActivity(sessionId, userId));
+            await mluviiClient.SendChatbotActivity(_options.ChatbotID,
+                Elements.SendActivity.CreateForwardActivity(sessionId, userId));
         }
 
         public async Task<bool> IsHealth()
