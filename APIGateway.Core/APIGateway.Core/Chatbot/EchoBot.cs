@@ -33,7 +33,6 @@ namespace APIGateway.Core.Chatbot
 
         public override async Task OnReceiveText(ActivityBase activity)
         {
-            
         }
 
         public override async Task OnReceiveConversationStarted(ActivityBase activity)

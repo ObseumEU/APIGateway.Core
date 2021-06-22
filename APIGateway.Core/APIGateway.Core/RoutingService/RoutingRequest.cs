@@ -5,17 +5,13 @@ namespace APIGateway.Core.RoutingService
 {
     public class RoutingRequest
     {
-        [Key]
-        public long Id { get; set; }
+        [Key] public long Id { get; set; }
 
-        [Required]
-        public string SharedIdentificator { get; set; }
+        [Required] public string SharedIdentificator { get; set; }
 
-        [Required]
-        public DateTime Created { get; set; }
+        [Required] public DateTime Created { get; set; }
 
-        [Required]
-        public string SessionId { get; set; }
+        [Required] public string SessionId { get; set; }
 
         public string OperatorId { get; set; }
 
