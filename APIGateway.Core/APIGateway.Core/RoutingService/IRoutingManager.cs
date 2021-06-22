@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace APIGateway.Core.RoutingService
@@ -12,9 +13,7 @@ namespace APIGateway.Core.RoutingService
 
     public interface IRoutingManager
     {
-        Task<string> SendRequestForRouting(string sessionId, RoutingType type, string themaId, string sessionUrl,
-            string prefferedOperator = null);
-
+        Task<string> SendRequestForRouting(string sessionId, RoutingType type, string themaId, string sessionUrl, string prefferedOperator = null);
         Task<RoutingRequest> OnRoutingRequestReceived(string sharedIdentificator, string employeeId, string markerId);
         Task<List<RoutingRequest>> GetWaitingRoutingRequests();
         Task DeleteOldRoutingRequests();

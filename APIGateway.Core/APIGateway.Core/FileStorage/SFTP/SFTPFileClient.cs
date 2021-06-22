@@ -19,8 +19,6 @@ namespace APIGateway.Core.FileStorage.SFTP
                 new PasswordAuthenticationMethod(credentials.Username, credentials.Password));
         }
 
-        public string Name => credentials?.Name;
-
         public async Task<List<FileInfo>> AllFiles(string folder = null)
         {
             throw new NotImplementedException();
@@ -46,6 +44,8 @@ namespace APIGateway.Core.FileStorage.SFTP
                 return await sw.ReadToEndAsync();
             }
         }
+
+        public string Name => credentials?.Name;
 
         public void UploadFile(Stream stream, string sourceFile, string targetPath)
         {
