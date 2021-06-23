@@ -34,19 +34,21 @@ namespace APIGateway.Core.RoutingService
             //Create shared ID between genesys and mluvii
             var externalId = _routingService.CreateSharedId(sessionId, type, type, number);
 
+            //Save routing request and wait for response in API.
+            await _routingRepository.AddNewRoutingRequest(sessionId, externalId);
+
             //Send routing request to external routing system
             var res = await _routingService.SendRoutingRequest(themaId, externalId, sessionUrl, preferredEmploy);
 
             if (res.IsSuccessful)
             {
-                //Save routing request and wait for response in API.
-                await _routingRepository.AddNewRoutingRequest(sessionId, externalId);
-
                 return externalId;
             }
-
-            _log.LogError("Cannot create routing request: Response from genesys " + res.Content);
-            throw new Exception("Cannot create routing request: Response from genesys " + res.Content);
+            else
+            {
+                _log.LogError("Cannot create routing request: Response from NTT " + res.Content);
+                throw new Exception("Cannot create routing request: Response from NTT " + res.Content);
+            }
         }
 
         public async Task<RoutingRequest> OnRoutingRequestReceived(string sharedIdentificator, string employeeId,
