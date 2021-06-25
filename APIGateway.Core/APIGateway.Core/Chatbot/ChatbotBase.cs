@@ -79,7 +79,7 @@ namespace APIGateway.Core.Chatbot
 
             try
             {
-                return await mluviiClient.SetChatbotCallbackURL(_options.ChatbotID,
+                return await mluviiClient.SetChatbotCallbackUrl(_options.ChatbotID,
                     _coreOptions.Domain + "/" + _options.CallBackURL);
             }
             catch (Exception e)
