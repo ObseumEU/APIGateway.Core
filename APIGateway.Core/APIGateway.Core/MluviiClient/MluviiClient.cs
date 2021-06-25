@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web;
 using APIGateway.Core.Cache;
 using APIGateway.Core.MluviiClient.Models;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using mluvii.ApiModels.Sessions;
@@ -92,13 +93,13 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<IRestResponse> SetChatbotCallbackURL(int chatbotID, string callbackUrl)
         {
-            var request = await CreateRequest($"api/v1/Chatbot/{chatbotID}?callbackUrl={callbackUrl}", Method.PUT);
+            var request = await CreateRequest($"api/{Version}/Chatbot/{chatbotID}?callbackUrl={callbackUrl}", Method.PUT);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
         public async Task<IRestResponse> GetAvaliableOperators(int chatbotID, string callbackUrl)
         {
-            var request = await CreateRequest($"api/v1/Chatbot/{chatbotID}?callbackUrl={callbackUrl}", Method.PUT);
+            var request = await CreateRequest($"api/{Version}/Chatbot/{chatbotID}?callbackUrl={callbackUrl}", Method.PUT);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
@@ -122,6 +123,17 @@ namespace APIGateway.Core.MluviiClient
 
             var callParam = session.value?.Guest?.CallParams;
             return (callParam, session.response);
+        }
+
+        public async Task<IRestResponse> SetCallParam(long sessionId, string key, string value)
+        {
+            var request = await CreateRequest($"api/{Version}/Sessions/{sessionId}/callparams", Method.PUT);
+            var body = new UpdateCallParamsModel();
+            body.CallParams = new Dictionary<string, string>();
+            body.CallParams[key] = value;
+            request.AddJsonBody(body);
+
+            return (await ExecuteAsync<object>(request, true)).Response;
         }
 
         public async Task<(string value, IRestResponse response)> GetCallParam(long sessionId, string callParamKey)
