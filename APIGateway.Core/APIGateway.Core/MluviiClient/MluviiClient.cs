@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Web;
 using APIGateway.Core.Cache;
 using APIGateway.Core.MluviiClient.Models;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using mluvii.ApiModels.Sessions;
@@ -16,18 +15,14 @@ using RestSharp;
 
 namespace APIGateway.Core.MluviiClient
 {
-    public class SessionNotFoundException : Exception
-    {
-    }
-
     public class MluviiClient : BaseClient, IMluviiUserClient
     {
-        private const string mluviiPublicApiScope = "mluviiPublicApi";
+        private const string MluviiPublicApiScope = "mluviiPublicApi";
         private const string Version = "v1";
         private readonly IOptions<ApiGatewayCoreOptions> _coreOptions;
         private readonly MluviiCredentialOptions _credentials;
         private readonly ILogger<BaseClient> _log;
-        private readonly TokenHolder tokenHolder;
+        private readonly TokenHolder _tokenHolder;
 
         public MluviiClient(
             ILogger<MluviiClient> log,
@@ -40,7 +35,7 @@ namespace APIGateway.Core.MluviiClient
             _log = log;
             _coreOptions = coreOptions;
             _credentials = credentials.Value;
-            tokenHolder = new TokenHolder(async () => await tokenEndpoint.RequestAccessToken(mluviiPublicApiScope),
+            _tokenHolder = new TokenHolder(async () => await tokenEndpoint.RequestAccessToken(MluviiPublicApiScope),
                 log);
         }
 
@@ -91,21 +86,23 @@ namespace APIGateway.Core.MluviiClient
                    $"/app/{_credentials.Company}/{_credentials.Tenant}/sessions/{sessionId}";
         }
 
-        public async Task<IRestResponse> SetChatbotCallbackURL(int chatbotID, string callbackUrl)
+        public async Task<IRestResponse> SetChatbotCallbackUrl(int chatbotId, string callbackUrl)
         {
-            var request = await CreateRequest($"api/{Version}/Chatbot/{chatbotID}?callbackUrl={callbackUrl}", Method.PUT);
+            var request = await CreateRequest($"api/{Version}/Chatbot/{chatbotId}?callbackUrl={callbackUrl}",
+                Method.PUT);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-        public async Task<IRestResponse> GetAvaliableOperators(int chatbotID, string callbackUrl)
+        public async Task<IRestResponse> GetAvaliableOperators(int chatbotId, string callbackUrl)
         {
-            var request = await CreateRequest($"api/{Version}/Chatbot/{chatbotID}?callbackUrl={callbackUrl}", Method.PUT);
+            var request = await CreateRequest($"api/{Version}/Chatbot/{chatbotId}?callbackUrl={callbackUrl}",
+                Method.PUT);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-        public async Task<IRestResponse> AddTagToSession(int tagID, long sessionID)
+        public async Task<IRestResponse> AddTagToSession(int tagId, long sessionId)
         {
-            var request = await CreateRequest($"/api/{Version}/Sessions/{sessionID}/tags/{tagID}", Method.PUT);
+            var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}/tags/{tagId}", Method.PUT);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
@@ -128,9 +125,7 @@ namespace APIGateway.Core.MluviiClient
         public async Task<IRestResponse> SetCallParam(long sessionId, string key, string value)
         {
             var request = await CreateRequest($"api/{Version}/Sessions/{sessionId}/callparams", Method.PUT);
-            var body = new UpdateCallParamsModel();
-            body.CallParams = new Dictionary<string, string>();
-            body.CallParams[key] = value;
+            var body = new UpdateCallParamsModel {CallParams = new Dictionary<string, string> {[key] = value}};
             request.AddJsonBody(body);
 
             return (await ExecuteAsync<object>(request, true)).Response;
@@ -205,7 +200,6 @@ namespace APIGateway.Core.MluviiClient
         }
 
         /// Webhook is called on endpoint from MluviiCredentialOptions
-        /// <param name="endpointResource">Example secret=d8s7f6p4bsdf087332kdc</param>
         public async Task<IRestResponse> UpdateWebhook(int id, string callbackUrl, List<string> webhookTypes)
         {
             callbackUrl = AddSecretToWebhook(callbackUrl);
@@ -220,14 +214,16 @@ namespace APIGateway.Core.MluviiClient
 
         private string AddSecretToWebhook(string callbackUrl)
         {
+            if(string.IsNullOrEmpty(callbackUrl))
+                throw new Exception("Callback url cannot be empty.");
+
             if (!string.IsNullOrEmpty(_credentials.WebhookSecret))
             {
                 var longurl = callbackUrl;
                 var uriBuilder = new UriBuilder(longurl);
                 var query = HttpUtility.ParseQueryString(uriBuilder.Query);
                 query["secret"] = _credentials.WebhookSecret;
-                ;
-                uriBuilder.Query = query.ToString();
+                uriBuilder.Query = query.ToString() ?? string.Empty;
                 callbackUrl = uriBuilder.Uri.ToString();
             }
 
@@ -250,28 +246,28 @@ namespace APIGateway.Core.MluviiClient
         private async Task<RestRequest> CreateRequest(string resource, Method method)
         {
             var request = new RestRequest(resource, method); //TBD
-            var token = await tokenHolder.GetToken();
+            var token = await _tokenHolder.GetToken();
             request.AddHeader("Authorization", $"bearer {token}");
             return request;
         }
 
-        public async Task<(CallParamsModel value, IRestResponse response)> GetCustomData(long sessionID)
+        public async Task<(CallParamsModel value, IRestResponse response)> GetCustomData(long sessionId)
         {
-            var request = await CreateRequest($"/api/{Version}/Sessions/{sessionID}/callparams", Method.GET);
+            var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}/callparams", Method.GET);
             var result = await ExecuteAsync<CallParamsModel>(request, true);
             return result;
         }
 
-        public async Task<IRestResponse> RemoveTagFromSession(int tagID, long sessionID)
+        public async Task<IRestResponse> RemoveTagFromSession(int tagId, long sessionId)
         {
-            var request = await CreateRequest($"/api/{Version}/Sessions/{sessionID}/tags/{tagID}", Method.DELETE);
+            var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}/tags/{tagId}", Method.DELETE);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
 
-        public async Task<IRestResponse> SendChatbotActivity(int chatbotID, object activity)
+        public async Task<IRestResponse> SendChatbotActivity(int chatbotId, object activity)
         {
-            var request = await CreateRequest($"/api/{Version}/Chatbot/{chatbotID}/activity", Method.POST);
+            var request = await CreateRequest($"/api/{Version}/Chatbot/{chatbotId}/activity", Method.POST);
             request.AddJsonBody(activity);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
