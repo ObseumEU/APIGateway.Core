@@ -182,5 +182,12 @@ namespace APIGateway.Core.Chatbot
         {
             await EnableGuestInput(currentActivity);
         }
+
+        public async Task HandOff(ActivityBase activity)
+        {
+            var msg = Elements.SendActivity.Create(activity);
+            msg.activity = "HandOff";
+            await SendActivity(msg);
+        }
     }
 }
