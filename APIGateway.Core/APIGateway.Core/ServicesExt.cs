@@ -114,8 +114,9 @@ namespace APIGateway.Core
             string sesttingsName = "Chatbot") where ChatBot : class, IChatbotBase
         {
             collection.Configure<ChatbotOptions>(configuration.GetSection(sesttingsName));
-            mvcBuilder.AddApplicationPart(Assembly.GetAssembly(typeof(ChatbotController)));
             collection.AddScoped<IChatbotBase, ChatBot>();
+            mvcBuilder.Services.AddScoped<IChatbotBase, ChatBot>();
+            mvcBuilder.AddApplicationPart(Assembly.GetAssembly(typeof(ChatbotController)));
             return collection;
         }
 
