@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.Caching;
+using System.Threading.Tasks;
 
 namespace APIGateway.Core.Cache
 {
@@ -7,6 +8,8 @@ namespace APIGateway.Core.Cache
     {
         T Get<T>(string cacheKey);
         void Set(string cacheKey, object item, double minutes);
+        Task<T> GetOrLoadFromCache<T>(Func<Task<T>> callbackDelegate, string key, double minutes);
+        T GetOrLoadFromCache<T>(Func<T> callbackDelegate, string key, double minutes);
     }
 
     public class InMemoryCache : ICacheService
@@ -19,6 +22,32 @@ namespace APIGateway.Core.Cache
         public void Set(string cacheKey, object item, double minutes)
         {
             if (item != null) MemoryCache.Default.Add(cacheKey, item, DateTime.Now.AddMinutes(minutes));
+        }
+
+        public async Task<T> GetOrLoadFromCache<T>(Func<Task<T>> callbackDelegate, string key, double minutes)
+        {
+            T result = Get<T>(key);
+
+            if (result == null)
+            {
+                result = await callbackDelegate();
+                Set(key,result, minutes);
+            }
+
+            return result;
+        }
+
+        public T GetOrLoadFromCache<T>(Func<T> callbackDelegate, string key, double minutes)
+        {
+            T result = Get<T>(key);
+
+            if (result == null)
+            {
+                result = callbackDelegate();
+                Set(key, result, minutes);
+            }
+
+            return result;
         }
     }
 }
