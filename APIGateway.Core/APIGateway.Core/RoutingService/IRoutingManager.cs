@@ -13,7 +13,7 @@ namespace APIGateway.Core.RoutingService
     public interface IRoutingManager
     {
         Task<string> SendRequestForRouting(string sessionId, RoutingType type, string themaId, string sessionUrl,
-            string prefferedOperator = null);
+            string routingCode, string prefferedOperator = null);
 
         Task<RoutingRequest> OnRoutingRequestReceived(string sharedIdentificator, string employeeId, string markerId);
         Task<List<RoutingRequest>> GetWaitingRoutingRequests();

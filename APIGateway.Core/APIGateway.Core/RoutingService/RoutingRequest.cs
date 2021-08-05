@@ -16,5 +16,6 @@ namespace APIGateway.Core.RoutingService
         public string OperatorId { get; set; }
 
         public DateTime? Processed { get; set; }
+        public string RoutingCode { get; set; }
     }
 }

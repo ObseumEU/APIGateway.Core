@@ -25,20 +25,20 @@ namespace APIGateway.Core.RoutingService
         }
 
         public async Task<string> SendRequestForRouting(string sessionId, RoutingType type, string themaId,
-            string sessionUrl, string prefferedOperator = null)
+            string sessionUrl, string routingCode, string prefferedOperator = null)
         {
             //Translate mluvii operatorID to genesys operatorId
-            var preferredEmploy = _operatorToEmployee.OperatorToEmployee(prefferedOperator);
+            var preferredEmploy = string.IsNullOrEmpty(prefferedOperator)? null : await _operatorToEmployee.OperatorToEmployee(prefferedOperator);
             var number = await _routingRepository.GetRoutingsCount(sessionId);
 
             //Create shared ID between genesys and mluvii
-            var externalId = _routingService.CreateSharedId(sessionId, type, type, number);
+            var externalId = _routingService.CreateSharedId(sessionId, type, number);
 
             //Save routing request and wait for response in API.
-            await _routingRepository.AddNewRoutingRequest(sessionId, externalId);
+            await _routingRepository.AddNewRoutingRequest(sessionId, externalId, routingCode);
 
             //Send routing request to external routing system
-            var res = await _routingService.SendRoutingRequest(themaId, externalId, sessionUrl, preferredEmploy);
+            var res = await _routingService.SendRoutingRequest(themaId, externalId, sessionUrl, sessionId, preferredEmploy);
 
             if (res.IsSuccessful)
             {
@@ -54,7 +54,7 @@ namespace APIGateway.Core.RoutingService
         public async Task<RoutingRequest> OnRoutingRequestReceived(string sharedIdentificator, string employeeId,
             string markerId)
         {
-            var operatorId = _operatorToEmployee.EmployeeToOperator(employeeId);
+            var operatorId = await _operatorToEmployee.EmployeeToOperator(employeeId);
 
             if (!string.IsNullOrEmpty(operatorId))
                 return await _routingRepository.SetResultOfRoutingRequest(sharedIdentificator, operatorId);

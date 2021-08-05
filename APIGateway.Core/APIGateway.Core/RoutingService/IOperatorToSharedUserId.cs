@@ -1,8 +1,10 @@
-﻿namespace APIGateway.Core.RoutingService
+﻿using System.Threading.Tasks;
+
+namespace APIGateway.Core.RoutingService
 {
     public interface IOperatorToSharedUserId
     {
-        string EmployeeToOperator(string employeeId);
-        string OperatorToEmployee(string operatorId);
+        Task<string> EmployeeToOperator(string employeeId);
+        Task<string> OperatorToEmployee(string operatorEmail);
     }
 }
