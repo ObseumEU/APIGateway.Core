@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Caching;
 using System.Threading.Tasks;
 
@@ -28,7 +29,7 @@ namespace APIGateway.Core.Cache
         {
             T result = Get<T>(key);
 
-            if (result == null)
+            if (result == null || EqualityComparer<T>.Default.Equals(result, default(T)) )
             {
                 result = await callbackDelegate();
                 Set(key,result, minutes);
