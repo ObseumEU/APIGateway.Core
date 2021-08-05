@@ -53,6 +53,19 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
+        public async Task<IRestResponse> AddTag(int departmentId, mluvii.ApiModels.Tags.CreateTagModel tag)
+        {
+            var request = await CreateRequest($"api/{Version}/Tags​/departments​/{departmentId}", Method.POST);
+            request.AddJsonBody(tag);
+            return (await ExecuteAsync<object>(request, true)).Response;
+        }
+
+        public async Task<(List<mluvii.ApiModels.Tags.TagModel> value, IRestResponse response)> GetAllTags()
+        {
+            var request = await CreateRequest($"api/{Version}/Tags", Method.GET);
+            return (await ExecuteAsync<List<mluvii.ApiModels.Tags.TagModel>>(request, true));
+        }
+
         public async Task<IRestResponse> AddUserToDepartment(int departmentId, int userId)
         {
             var request = await CreateRequest($"api/{Version}/users/{userId}/departments", Method.PUT);
