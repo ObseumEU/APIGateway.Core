@@ -26,6 +26,11 @@ namespace APIGateway.Core.Chatbot
         public bool LoadOnaStartCallParams = true;
         public long? SessionId;
 
+        /// <summary>
+        /// First start on this session. Can be forwarded on chatbot many times
+        /// </summary>
+        public bool IsFirstStart;
+
         public ChatbotBase(ILogger logger, IOptions<ChatbotOptions> options, MluviiClient.MluviiClient mluviiClient,
             IOptions<ApiGatewayCoreOptions> coreOptions, ICacheService cache)
         {
@@ -52,6 +57,11 @@ namespace APIGateway.Core.Chatbot
                 if (LoadOnaStartCallParams)
                     await GetCallParams(activity);
 
+                //Check if its first start on this session.
+                var IsFirstStartStr = GetLocalSessionParam<string>("FirstStart");
+                IsFirstStart = string.IsNullOrEmpty(IsFirstStartStr);
+                SaveLocalSessionParam("FirstStart", "false");
+                
                 await OnReceiveConversationStarted(activity);
             }
 
@@ -117,6 +127,16 @@ namespace APIGateway.Core.Chatbot
         public abstract Task OnReceiveConversationStarted(ActivityBase activity);
 
         public abstract Task OnReceiveCallParams(ActivityBase activity);
+
+        public void SaveLocalState(object item, double minutesLifetime = 120)
+        {
+            SaveLocalSessionParam("state", item, minutesLifetime);
+        }
+
+        public string GetLocalState()
+        {
+            return GetLocalSessionParam<string>("state");
+        }
 
         public void SaveLocalSessionParam(string key, object item, double minutesLifetime = 120)
         {
