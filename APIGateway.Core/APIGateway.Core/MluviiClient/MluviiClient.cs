@@ -55,7 +55,7 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<IRestResponse> AddTag(int departmentId, mluvii.ApiModels.Tags.CreateTagModel tag)
         {
-            var request = await CreateRequest($"api/{Version}/Tags​/departments​/{departmentId}", Method.POST);
+            var request = await CreateRequest($"api/{Version}/tags/departments/{departmentId}", Method.POST);
             request.AddJsonBody(tag);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
