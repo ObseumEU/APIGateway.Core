@@ -81,7 +81,7 @@ namespace APIGateway.Core.MluviiClient
 
     public class BaseClient : RestClient
     {
-        private readonly ILogger _log;
+        public readonly ILogger _log;
         protected ICacheService _cache;
 
         public BaseClient(ILogger log, ICacheService cache,
