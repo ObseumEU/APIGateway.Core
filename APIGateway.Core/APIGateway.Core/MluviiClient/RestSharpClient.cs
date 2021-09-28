@@ -104,7 +104,7 @@ namespace APIGateway.Core.MluviiClient
             var response = await base.ExecuteAsync<T>(request);
             if (logVerbose)
                 _log.LogInformation(
-                    $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+                    $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body} RequestBody: {request.Parameters.FirstOrDefault().Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
 
             if (!response.IsSuccessful)
                 LogError(BaseUrl, request, response);
