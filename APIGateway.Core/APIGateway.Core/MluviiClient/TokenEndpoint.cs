@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -65,7 +65,7 @@ namespace APIGateway.Core.MluviiClient
             var response = await httpClient.PostAsync(config.TokenEndpoint, content);
 
             if (response.StatusCode != HttpStatusCode.OK)
-                throw new Exception("Token was not received, possible error.");
+                throw new Exception("Token was not received, possible error." + response.Content + " Code:" + response.StatusCode);
 
             var responseString = await response.Content.ReadAsStringAsync();
             var payload = JsonConvert.DeserializeObject<Token>(responseString);

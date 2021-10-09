@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +8,7 @@ using APIGateway.Core.Cache;
 using APIGateway.Core.MluviiClient.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using mluvii.ApiModels.Campaigns;
 using mluvii.ApiModels.Sessions;
 using mluvii.ApiModels.Users;
 using mluvii.ApiModels.Webhooks;
@@ -37,6 +38,71 @@ namespace APIGateway.Core.MluviiClient
             _credentials = credentials.Value;
             _tokenHolder = new TokenHolder(async () => await tokenEndpoint.RequestAccessToken(MluviiPublicApiScope),
                 log);
+        }
+
+        public async Task<IRestResponse> AddContactToCampaign(int campaignId, int contactId)
+        {
+            return await AddContactToCampaign(campaignId, new List<int>() {contactId});
+        }
+
+        public async Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds)
+        {
+            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/contacts", Method.POST);
+            request.AddJsonBody(contactIds);
+            return (await ExecuteAsync<object>(request, true)).Response;
+        }
+
+        public async Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId)
+        {
+            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities", Method.GET);
+            return await ExecuteAsync<List<CampaignIdentity>>(request, true);
+        }
+
+        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000)
+        {
+            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}", Method.GET);
+            return await ExecuteAsync<List<Contact>>(request, true);
+        }
+
+        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000)
+        {
+            return await GetContacts(departmentId, new List<string>() {phoneFilter}, limit);
+        }
+
+        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000)
+        {
+            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}", Method.GET);
+            var contacts = await ExecuteAsync<List<Contact>>(request, true);
+
+            contacts.Value = contacts.Value
+                .Where(c => c.oo1_guest_phone != null)
+                .Where(c => c.oo1_guest_phone.Any(p => 
+                    phoneFilter.Any(
+                        pf => p == pf))).ToList();
+
+            return contacts;
+        }
+
+        public async Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId, Dictionary<string, string> contact)
+        {
+            var res = await CreateContact(departmentId, new List<Dictionary<string, string>>() { contact });
+
+            var value = res.contactIds?.FirstOrDefault();
+            var response = res.response;
+            return (value, response);
+        }
+
+        public async Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId, List<Dictionary<string, string>> contacts)
+        {
+            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}", Method.POST);
+            request.AddJsonBody(contacts);
+            return await ExecuteAsync<List<int>>(request, true);
+        }
+
+        public async Task<(List<Contact> contact, IRestResponse response)> GetContact(long contactId, long departmentId)
+        {
+            var request = await CreateRequest($"api/{Version}/Contacts/{contactId}/departments/{departmentId}", Method.GET);
+            return await ExecuteAsync<List<Contact>>(request, false);
         }
 
         public async Task<(List<User> value, IRestResponse response)> GetAllUsers()
@@ -154,17 +220,17 @@ namespace APIGateway.Core.MluviiClient
             return (value, callparams.response);
         }
 
-        public async Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime from, DateTime to,
-            string channel = "", string source = "", bool verbose = false)
+        public async Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
+            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
+            string source = "", bool verbose = false)
         {
+            var url = $"/api/{Version}/Sessions";
+
+            var urlWithArguments = AddArgumentsToUrl(url, GetSessionArguments(startedFrom, startedTo, endedFrom, endedTo, channel, source));
+
             var request =
-                await CreateRequest(
-                    $"/api/{Version}/Sessions" +
-                    $"?Created.Min={from.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}" +
-                    $"&Created.Max={to.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}" +
-                    (!string.IsNullOrEmpty(channel) ? $"&Channel={channel}" : "") +
-                    (!string.IsNullOrEmpty(source) ? $"&Source={source}" : ""),
-                    Method.GET);
+                await CreateRequest(urlWithArguments, Method.GET);
+
             return await ExecuteAsync<List<SessionModel>>(request, verbose);
         }
 
@@ -185,13 +251,19 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task DownloadRecording(SessionModel.Recording recording, Action<Stream> responseWriter)
         {
+            await DownloadRecording(recording.DownloadUrl, responseWriter);
+        }
+
+        public async Task DownloadRecording(string recordingUrl, Action<Stream> responseWriter)
+        {
             var request = await CreateRequest("", Method.GET);
             request.ResponseWriter = responseWriter;
-            var client = new RestClient(recording.DownloadUrl);
+
+            var client = new RestClient(recordingUrl);
             var response = await client.ExecuteAsync(request);
             if (!response.IsSuccessful)
                 throw new Exception(
-                    $"Unable to download file {recording.DownloadUrl} code:{response.StatusCode} response:{response.Content}");
+                    $"Unable to download file {recordingUrl} code:{response.StatusCode} response:{response.Content}");
         }
 
         public async Task<IRestResponse> AddWebhook(List<WebhookEventType> webhookTypes)
@@ -284,6 +356,53 @@ namespace APIGateway.Core.MluviiClient
             request.AddJsonBody(activity);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
+
+        private List<string> GetSessionArguments(DateTime? startedFrom, DateTime? startedTo, DateTime? endedFrom, DateTime? endedTo,
+            string channel, string source)
+        {
+            var addedArguments = new List<string>();
+
+            if (startedFrom.HasValue)
+            {
+                addedArguments.Add($"Created.Min={startedFrom.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}");
+            }
+
+            if (startedTo.HasValue)
+            {
+                addedArguments.Add($"Created.Max={startedTo.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}");
+            }
+
+            if (endedFrom.HasValue)
+            {
+                addedArguments.Add($"Ended.Min={endedFrom.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}");
+            }
+
+            if (endedTo.HasValue)
+            {
+                addedArguments.Add($"Ended.Max={endedTo.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}");
+            }
+
+            if (!string.IsNullOrEmpty(channel))
+            {
+                addedArguments.Add($"Channel={channel}");
+            }
+
+            if (!string.IsNullOrEmpty(source))
+            {
+                addedArguments.Add($"Source={source}");
+            }
+
+            return addedArguments;
+        }
+
+        private string AddArgumentsToUrl(string url, IList<string> queryParameters)
+        {
+            queryParameters ??= new List<string>();
+
+            string argumentsString = string.Join("&", queryParameters.Where(arg => !string.IsNullOrEmpty(arg)));
+
+            return !string.IsNullOrEmpty(argumentsString) ? $"{url}?{argumentsString}" : url;
+        }
     }
 
     public interface IMluviiUserClient
@@ -293,5 +412,14 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> AddUserToDepartment(int departmentId, int userId);
         Task<IRestResponse> DisableUsers(List<User> users);
         Task<IRestResponse> EnableUsers(int userId);
+    }
+
+    public class Contact
+    {
+
+        public long id { get; set; }
+        public string[] oo1_guest_phone { get; set; }
+        public string oo1_guest_ident { get; set; }
+        public string[] oo1_guest_guid { get; set; }
     }
 }
