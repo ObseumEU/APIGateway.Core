@@ -25,9 +25,7 @@ namespace APIGateway.Core.MluviiClient
             tokenNextRefresh = DateTime.Now + TimeSpan.FromSeconds(tokenResponse.ExpiresIn) -
                                TimeSpan.FromMinutes(5);
             token = tokenResponse.AccessToken;
-            log.LogInformation(
-                $"Successfully retrieved access token from identity server.  Next refresh: {tokenNextRefresh:O}");
-
+          
             return token;
         }
     }
