@@ -14,9 +14,9 @@ namespace APIGateway.Core.Chatbot
     public class ChatbotController : ControllerBase
     {
         private readonly ILogger<ChatbotController> _log;
-        private readonly IServiceProvider _provide;
+        private readonly IServiceScopeFactory _provide;
 
-        public ChatbotController(ILogger<ChatbotController> log, IServiceProvider _provide)
+        public ChatbotController(ILogger<ChatbotController> log, IServiceScopeFactory _provide)
         {
             _log = log;
             this._provide = _provide;
