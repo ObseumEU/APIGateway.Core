@@ -21,7 +21,7 @@ namespace APIGateway.Core.MluviiClient
         private const string MluviiPublicApiScope = "mluviiPublicApi";
         private const string Version = "v1";
         private readonly IOptions<ApiGatewayCoreOptions> _coreOptions;
-        private readonly MluviiCredentialOptions _credentials;
+        public readonly MluviiCredentialOptions _credentials;
         private readonly ILogger<BaseClient> _log;
         private readonly TokenHolder _tokenHolder;
 
@@ -189,6 +189,24 @@ namespace APIGateway.Core.MluviiClient
         {
             var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}", Method.GET);
             return await ExecuteAsync<SessionModel>(request, true);
+        }
+
+        public async Task<(string email, IRestResponse response)> GetEmailFromSession(long sessionId, int? tenantId = null)
+        {
+            if (tenantId == null)
+            {
+                tenantId = _credentials.Tenant;
+            }
+
+            var sessions = await GetSession(sessionId);
+            var identityID = sessions.value?.Guest?.Identity;
+
+            if (string.IsNullOrEmpty(identityID))
+                return (null, sessions.response);
+
+            var identity = await GetContact(long.Parse(identityID), _credentials.Tenant);
+            var email = identity.contact?.First()?.oo1_guest_email?.FirstOrDefault();
+            return (email, sessions.response);
         }
 
         public async Task<(IDictionary<string, string> value, IRestResponse response)> GetCallParams(long sessionId)
@@ -421,5 +439,6 @@ namespace APIGateway.Core.MluviiClient
         public string[] oo1_guest_phone { get; set; }
         public string oo1_guest_ident { get; set; }
         public string[] oo1_guest_guid { get; set; }
+        public string[] oo1_guest_email { get; set; }
     }
 }
