@@ -240,11 +240,11 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
-            string source = "", bool verbose = false)
+            string source = "", bool verbose = false, int limit = 100000)
         {
             var url = $"/api/{Version}/Sessions";
 
-            var urlWithArguments = AddArgumentsToUrl(url, GetSessionArguments(startedFrom, startedTo, endedFrom, endedTo, channel, source));
+            var urlWithArguments = AddArgumentsToUrl(url, GetSessionArguments(startedFrom, startedTo, endedFrom, endedTo, channel, source, limit));
 
             var request =
                 await CreateRequest(urlWithArguments, Method.GET);
@@ -346,6 +346,12 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
+        public async Task<IRestResponse> AnonymizeSession(long sessionId, bool verbose = false)
+        {
+            var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}/anonymize", Method.POST);
+            return (await ExecuteAsync<object>(request, verbose)).Response;
+        }
+
         private async Task<RestRequest> CreateRequest(string resource, Method method)
         {
             var request = new RestRequest(resource, method); //TBD
@@ -375,8 +381,9 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-        private List<string> GetSessionArguments(DateTime? startedFrom, DateTime? startedTo, DateTime? endedFrom, DateTime? endedTo,
-            string channel, string source)
+        private List<string> GetSessionArguments(DateTime? startedFrom, DateTime? startedTo, DateTime? endedFrom,
+            DateTime? endedTo,
+            string channel, string source, int limit)
         {
             var addedArguments = new List<string>();
 
@@ -409,6 +416,8 @@ namespace APIGateway.Core.MluviiClient
             {
                 addedArguments.Add($"Source={source}");
             }
+
+            addedArguments.Add($"limit={limit}");
 
             return addedArguments;
         }
