@@ -99,7 +99,7 @@ namespace APIGateway.Core.MluviiClient
         }
 
         public async Task<(T Value, IRestResponse Response)> ExecuteAsync<T>(IRestRequest request,
-            bool logVerbose = false) where T : new()
+            bool logVerbose = false)
         {
             var response = await base.ExecuteAsync<T>(request);
             if (logVerbose)
