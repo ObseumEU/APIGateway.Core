@@ -16,7 +16,66 @@ using RestSharp;
 
 namespace APIGateway.Core.MluviiClient
 {
-    public class MluviiClient : BaseClient, IMluviiUserClient
+    public interface IMluviiClient
+    {
+        Task<IRestResponse> AddContactToCampaign(int campaignId, int contactId);
+        Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds);
+        Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId);
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000);
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000);
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000);
+        Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId, Dictionary<string, string> contact);
+        Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId, List<Dictionary<string, string>> contacts);
+        Task<(List<Contact> contact, IRestResponse response)> GetContact(long contactId, long departmentId);
+        Task<(List<User> value, IRestResponse response)> GetAllUsers();
+        Task<IRestResponse> AddUsers(int companyId, User user);
+        Task<IRestResponse> AddTag(int departmentId, mluvii.ApiModels.Tags.CreateTagModel tag);
+        Task<(List<mluvii.ApiModels.Tags.TagModel> value, IRestResponse response)> GetAllTags();
+        Task<IRestResponse> AddUserToDepartment(int departmentId, int userId);
+        Task<IRestResponse> DisableUsers(List<User> users);
+        Task<IRestResponse> EnableUsers(int userId);
+        string GetSessionUrl(long sessionId);
+        Task<IRestResponse> SetChatbotCallbackUrl(int chatbotId, string callbackUrl);
+        Task<IRestResponse> GetAvaliableOperators(int chatbotId, string callbackUrl);
+        Task<IRestResponse> AddTagToSession(int tagId, long sessionId);
+        Task<(SessionModel value, IRestResponse response)> GetSession(long sessionId);
+        Task<(string email, IRestResponse response)> GetEmailFromSession(long sessionId, int? tenantId = null);
+        Task<(IDictionary<string, string> value, IRestResponse response)> GetCallParams(long sessionId);
+        Task<IRestResponse> SetCallParam(long sessionId, string key, string value);
+        Task<(string value, IRestResponse response)> GetCallParam(long sessionId, string callParamKey);
+
+        Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
+            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
+            string source = "", bool verbose = false, int limit = 100000);
+
+        Task<(List<OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false);
+        Task<(List<WebhookModel> value, IRestResponse response)> GetWebhooks();
+        Task DownloadRecording(SessionModel.Recording recording, Action<Stream> responseWriter);
+        Task DownloadRecording(string recordingUrl, Action<Stream> responseWriter);
+        Task<IRestResponse> AddWebhook(List<WebhookEventType> webhookTypes);
+
+        /// Webhook is called on endpoint from MluviiCredentialOptions
+        Task<IRestResponse> AddWebhook(List<string> webhookTypes);
+
+        Task<IRestResponse> UpdateWebhook(int id, List<string> webhookTypes);
+
+        /// Webhook is called on endpoint from MluviiCredentialOptions
+        Task<IRestResponse> UpdateWebhook(int id, string callbackUrl, List<string> webhookTypes);
+        Task<IRestResponse> AddWebhook(string callBackUrl, List<string> webhookTypes);
+        Task<IRestResponse> AnonymizeSession(long sessionId, bool verbose = false);
+        Task<(CallParamsModel value, IRestResponse response)> GetCustomData(long sessionId);
+        Task<IRestResponse> RemoveTagFromSession(int tagId, long sessionId);
+        Task<IRestResponse> SendChatbotActivity(int chatbotId, object activity);
+
+        Task<(T Value, IRestResponse Response)> ExecuteAsync<T>(IRestRequest request,
+            bool logVerbose = false);
+
+        Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, int minutes = 5,
+            bool logVerbose = false)
+            where T : class, new();
+    }
+
+    public class MluviiClient : BaseClient, IMluviiUserClient, IMluviiClient
     {
         private const string MluviiPublicApiScope = "mluviiPublicApi";
         private const string Version = "v1";
