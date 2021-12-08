@@ -69,7 +69,6 @@ namespace APIGateway.Core.MluviiClient
 
             var responseString = await response.Content.ReadAsStringAsync();
             var payload = JsonConvert.DeserializeObject<Token>(responseString);
-            log.LogWarning("Token received");
             return payload;
         }
     }
