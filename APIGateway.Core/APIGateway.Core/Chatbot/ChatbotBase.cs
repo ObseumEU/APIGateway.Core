@@ -19,7 +19,7 @@ namespace APIGateway.Core.Chatbot
         private readonly ApiGatewayCoreOptions _coreOptions;
         public readonly ILogger _log;
         private readonly ChatbotOptions _options;
-        public readonly MluviiClient.MluviiClient mluviiClient;
+        public readonly IMluviiClient mluviiClient;
         public Dictionary<string, string> CallParams;
         private ActivityBase currentActivity;
         public bool IsDebug;
@@ -31,7 +31,7 @@ namespace APIGateway.Core.Chatbot
         /// </summary>
         public bool IsFirstStart;
 
-        public ChatbotBase(ILogger logger, IOptions<ChatbotOptions> options, MluviiClient.MluviiClient mluviiClient,
+        public ChatbotBase(ILogger logger, IOptions<ChatbotOptions> options, IMluviiClient mluviiClient,
             IOptions<ApiGatewayCoreOptions> coreOptions, ICacheService cache)
         {
             _options = options?.Value;

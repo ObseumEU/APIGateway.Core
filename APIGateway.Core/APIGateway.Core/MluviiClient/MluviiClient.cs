@@ -437,7 +437,7 @@ namespace APIGateway.Core.MluviiClient
         {
             var request = await CreateRequest($"/api/{Version}/Chatbot/{chatbotId}/activity", Method.POST);
             request.AddJsonBody(activity);
-            return (await ExecuteAsync<object>(request, true)).Response;
+            return (await ExecuteAsync<object>(request, false)).Response;
         }
 
         private List<string> GetSessionArguments(DateTime? startedFrom, DateTime? startedTo, DateTime? endedFrom,
