@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web;
 using APIGateway.Core.Cache;
 using APIGateway.Core.MluviiClient.Models;
+using Microsoft.Extensions.Localization.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using mluvii.ApiModels.Campaigns;
@@ -46,7 +47,7 @@ namespace APIGateway.Core.MluviiClient
 
         Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
-            string source = "", bool verbose = false, int limit = 100000);
+            string source = "", bool verbose = false, int limit = 100000, string[] status = null);
 
         Task<(List<OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false);
         Task<(List<WebhookModel> value, IRestResponse response)> GetWebhooks();
@@ -299,11 +300,11 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
-            string source = "", bool verbose = false, int limit = 100000)
+            string source = "", bool verbose = false, int limit = 100000, string[] status = null)
         {
             var url = $"/api/{Version}/Sessions";
 
-            var urlWithArguments = AddArgumentsToUrl(url, GetSessionArguments(startedFrom, startedTo, endedFrom, endedTo, channel, source, limit));
+            var urlWithArguments = AddArgumentsToUrl(url, GetSessionArguments(startedFrom, startedTo, endedFrom, endedTo, channel, source, limit, status));
 
             var request =
                 await CreateRequest(urlWithArguments, Method.GET);
@@ -442,7 +443,7 @@ namespace APIGateway.Core.MluviiClient
 
         private List<string> GetSessionArguments(DateTime? startedFrom, DateTime? startedTo, DateTime? endedFrom,
             DateTime? endedTo,
-            string channel, string source, int limit)
+            string channel, string source, int limit, string[] status)
         {
             var addedArguments = new List<string>();
 
@@ -474,6 +475,14 @@ namespace APIGateway.Core.MluviiClient
             if (!string.IsNullOrEmpty(source))
             {
                 addedArguments.Add($"Source={source}");
+            }
+
+            if (status != null && status.Length > 0)
+            {
+                foreach (var oneStatus in status)
+                {
+                    addedArguments.Add($"status[]={oneStatus}");
+                }
             }
 
             addedArguments.Add($"limit={limit}");
