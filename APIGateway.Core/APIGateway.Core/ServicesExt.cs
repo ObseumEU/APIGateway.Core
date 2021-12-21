@@ -72,7 +72,9 @@ namespace APIGateway.Core
             collection.Configure<MluviiCredentialOptions>(configuration.GetSection(mluviiSesttingsName));
             collection.AddSingleton<ICacheService, InMemoryCache>();
             collection.AddSingleton<ITokenEndpoint, TokenEndpoint>();
-            collection.AddSingleton<IMluviiClient, MluviiClient.MluviiClient>();
+            collection.AddSingleton<MluviiClient.MluviiClient>();
+            collection.AddSingleton<IMluviiClient>(x => x.GetService<MluviiClient.MluviiClient>());
+            collection.AddSingleton<IMluviiUserClient>(x => x.GetService<MluviiClient.MluviiClient>());
 
             return collection;
         }
