@@ -47,7 +47,7 @@ namespace APIGateway.Core.MluviiClient
 
         Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
-            string source = "", bool verbose = false, int limit = 100000, string[] status = null);
+            string source = "", bool verbose = false, int limit = 100000, int? offset = null, string[] status = null);
 
         Task<(List<OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false);
         Task<(List<WebhookModel> value, IRestResponse response)> GetWebhooks();
