@@ -24,6 +24,10 @@ namespace APIGateway.Core.Phone
                 if (res.Length == 9)
                     res = "+420" + res;
                 output = res;
+
+                if (res.Length < 9)
+                    return false;
+
                 return true;
             }
             output = null;
