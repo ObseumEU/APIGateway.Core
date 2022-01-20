@@ -10,6 +10,7 @@ using Microsoft.Extensions.Localization.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using mluvii.ApiModels.Campaigns;
+using mluvii.ApiModels.Emails;
 using mluvii.ApiModels.Sessions;
 using mluvii.ApiModels.Users;
 using mluvii.ApiModels.Webhooks;
@@ -48,7 +49,7 @@ namespace APIGateway.Core.MluviiClient
         Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
             string source = "", bool verbose = false, int limit = 100000, int? offset = null, string[] status = null);
-
+        Task<(EmailThreadModel value, IRestResponse response)> GetEmailThread(long emailThread);
         Task<(List<OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false);
         Task<(List<WebhookModel> value, IRestResponse response)> GetWebhooks();
         Task DownloadRecording(SessionModel.Recording recording, Action<Stream> responseWriter);
@@ -74,6 +75,10 @@ namespace APIGateway.Core.MluviiClient
         Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, int minutes = 5,
             bool logVerbose = false)
             where T : class, new();
+
+        Task<(EmailThreadParamsModel value, IRestResponse response)> GetEmailThreadParam(long threadId);
+        Task<IRestResponse> AddTagToEmailThread(long threadId, string tagName);
+        Task<IRestResponse> RemoveTagToEmailThread(long threadId, string tagName);
     }
 
     public class MluviiClient : BaseClient, IMluviiUserClient, IMluviiClient
@@ -251,6 +256,24 @@ namespace APIGateway.Core.MluviiClient
             return await ExecuteAsync<SessionModel>(request, true);
         }
 
+        public async Task<(EmailThreadParamsModel value, IRestResponse response)> GetEmailThreadParam(long threadId)
+        {
+            var request = await CreateRequest($"/api/{Version}/EmailThreads/{threadId}/params", Method.GET);
+            return await ExecuteAsync<EmailThreadParamsModel>(request, true);
+        }
+
+        public async Task<IRestResponse> AddTagToEmailThread(long threadId, string tagName)
+        {
+            var request = await CreateRequest($"api/{Version}/EmailThreads/{threadId}/tags/{tagName}", Method.PUT);
+            return (await ExecuteAsync<object>(request, true)).Response;
+        }
+
+        public async Task<IRestResponse> RemoveTagToEmailThread(long threadId, string tagName)
+        {
+            var request = await CreateRequest($"api/{Version}/EmailThreads/{threadId}/tags/{tagName}", Method.DELETE);
+            return (await ExecuteAsync<object>(request, true)).Response;
+        }
+
         public async Task<(string email, IRestResponse response)> GetEmailFromSession(long sessionId, int? tenantId = null)
         {
             if (tenantId == null)
@@ -310,6 +333,12 @@ namespace APIGateway.Core.MluviiClient
                 await CreateRequest(urlWithArguments, Method.GET);
 
             return await ExecuteAsync<List<SessionModel>>(request, verbose);
+        }
+
+        public async Task<(EmailThreadModel value, IRestResponse response)> GetEmailThread(long emailThread)
+        {
+            var request = await CreateRequest($"api/{Version}/EmailThreads/{emailThread}", Method.GET);
+            return await ExecuteAsync<EmailThreadModel>(request);
         }
 
         public async Task<(List<OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false)
