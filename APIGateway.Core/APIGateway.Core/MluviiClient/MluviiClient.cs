@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using System.Web;
 using APIGateway.Core.Cache;
@@ -264,7 +265,8 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<IRestResponse> AddTagToEmailThread(long threadId, string tagName)
         {
-            var request = await CreateRequest($"api/{Version}/EmailThreads/{threadId}/tags/{tagName}", Method.PUT);
+            var encodedName = UrlEncoder.Default.Encode(tagName);
+            var request = await CreateRequest($"api/{Version}/EmailThreads/{threadId}/tags/{encodedName}", Method.PUT);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
