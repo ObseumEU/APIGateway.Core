@@ -30,8 +30,8 @@ namespace APIGateway.Core.Chatbot
                 return Ok();
 
             _log.LogInformation($"Receive webhook from mluvii to chatbot: {JsonConvert.SerializeObject(activity)}");
-            ThreadPool.QueueUserWorkItem(async x =>
-            {
+          //  ThreadPool.QueueUserWorkItem(async x =>
+           // {
                 using (var scope = _provide.CreateScope())
                 {
                     var localLog = scope.ServiceProvider.GetService<ILogger<ChatbotController>>();
@@ -45,8 +45,8 @@ namespace APIGateway.Core.Chatbot
                     {
                         localLog.LogError(ex, "Cannot process incoming chatbot message");
                     }
-                }
-            });
+                };
+          //  });
             return Ok();
         }
 
