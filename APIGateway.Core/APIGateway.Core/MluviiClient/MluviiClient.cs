@@ -80,6 +80,10 @@ namespace APIGateway.Core.MluviiClient
         Task<(EmailThreadParamsModel value, IRestResponse response)> GetEmailThreadParam(long threadId);
         Task<IRestResponse> AddTagToEmailThread(long threadId, string tagName);
         Task<IRestResponse> RemoveTagToEmailThread(long threadId, string tagName);
+
+        Task GetSessionsPaged(Func<(List<SessionModel> value, IRestResponse response), Task> pageAction, DateTime? startedFrom = null,
+           DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
+           string source = "", bool verbose = false, int limit = 500, string[] status = null, int delayMiliseconds = 200);
     }
 
     public class MluviiClient : BaseClient, IMluviiUserClient, IMluviiClient
@@ -337,12 +341,6 @@ namespace APIGateway.Core.MluviiClient
             return await ExecuteAsync<List<SessionModel>>(request, verbose);
         }
 
-        public async Task<(EmailThreadModel value, IRestResponse response)> GetEmailThread(long emailThread)
-        {
-            var request = await CreateRequest($"api/{Version}/EmailThreads/{emailThread}", Method.GET);
-            return await ExecuteAsync<EmailThreadModel>(request);
-        }
-
         public async Task<(List<OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false)
         {
             var request =
@@ -463,7 +461,6 @@ namespace APIGateway.Core.MluviiClient
             var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}/tags/{tagId}", Method.DELETE);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
-
 
         public async Task<IRestResponse> SendChatbotActivity(int chatbotId, object activity)
         {
