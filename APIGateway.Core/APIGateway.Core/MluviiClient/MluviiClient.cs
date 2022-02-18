@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 using System.Web;
 using APIGateway.Core.Cache;
 using APIGateway.Core.MluviiClient.Models;
-using Microsoft.Extensions.Localization.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using mluvii.ApiModels.Campaigns;
 using mluvii.ApiModels.Emails;
 using mluvii.ApiModels.Sessions;
+using mluvii.ApiModels.Tags;
 using mluvii.ApiModels.Users;
 using mluvii.ApiModels.Webhooks;
 using RestSharp;
@@ -25,15 +25,24 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds);
         Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId);
         Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000);
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000);
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000);
-        Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId, Dictionary<string, string> contact);
-        Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId, List<Dictionary<string, string>> contacts);
+
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter,
+            int limit = 1000000);
+
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter,
+            int limit = 1000000);
+
+        Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId,
+            Dictionary<string, string> contact);
+
+        Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId,
+            List<Dictionary<string, string>> contacts);
+
         Task<(List<Contact> contact, IRestResponse response)> GetContact(long contactId, long departmentId);
         Task<(List<User> value, IRestResponse response)> GetAllUsers();
         Task<IRestResponse> AddUsers(int companyId, User user);
-        Task<IRestResponse> AddTag(int departmentId, mluvii.ApiModels.Tags.CreateTagModel tag);
-        Task<(List<mluvii.ApiModels.Tags.TagModel> value, IRestResponse response)> GetAllTags();
+        Task<IRestResponse> AddTag(int departmentId, CreateTagModel tag);
+        Task<(List<TagModel> value, IRestResponse response)> GetAllTags();
         Task<IRestResponse> AddUserToDepartment(int departmentId, int userId);
         Task<IRestResponse> DisableUsers(List<User> users);
         Task<IRestResponse> EnableUsers(int userId);
@@ -50,6 +59,7 @@ namespace APIGateway.Core.MluviiClient
         Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
             string source = "", bool verbose = false, int limit = 100000, int? offset = null, string[] status = null);
+
         Task<(EmailThreadModel value, IRestResponse response)> GetEmailThread(long emailThread);
         Task<(List<OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false);
         Task<(List<WebhookModel> value, IRestResponse response)> GetWebhooks();
@@ -64,6 +74,7 @@ namespace APIGateway.Core.MluviiClient
 
         /// Webhook is called on endpoint from MluviiCredentialOptions
         Task<IRestResponse> UpdateWebhook(int id, string callbackUrl, List<string> webhookTypes);
+
         Task<IRestResponse> AddWebhook(string callBackUrl, List<string> webhookTypes);
         Task<IRestResponse> AnonymizeSession(long sessionId, bool verbose = false);
         Task<(CallParamsModel value, IRestResponse response)> GetCustomData(long sessionId);
@@ -81,9 +92,11 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> AddTagToEmailThread(long threadId, string tagName);
         Task<IRestResponse> RemoveTagToEmailThread(long threadId, string tagName);
 
-        Task GetSessionsPaged(Func<(List<SessionModel> value, IRestResponse response), Task> pageAction, DateTime? startedFrom = null,
-           DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
-           string source = "", bool verbose = false, int limit = 500, string[] status = null, int delayMiliseconds = 200);
+        Task GetSessionsPaged(Func<(List<SessionModel> value, IRestResponse response), Task> pageAction,
+            DateTime? startedFrom = null,
+            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
+            string source = "", bool verbose = false, int limit = 200, string[] status = null,
+            int delayMiliseconds = 200);
     }
 
     public class MluviiClient : BaseClient, IMluviiUserClient, IMluviiClient
@@ -112,7 +125,30 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<IRestResponse> AddContactToCampaign(int campaignId, int contactId)
         {
-            return await AddContactToCampaign(campaignId, new List<int>() {contactId});
+            return await AddContactToCampaign(campaignId, new List<int> {contactId});
+        }
+
+        public async Task GetSessionsPaged(Func<(List<SessionModel> value, IRestResponse response), Task> pageAction,
+            DateTime? startedFrom = null,
+            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
+            string source = "", bool verbose = false, int limit = 200, string[] status = null,
+            int delayMiliseconds = 200)
+        {
+            var result = new List<SessionModel>();
+            var currentOffset = 0;
+            do
+            {
+                var res = await GetSessions(startedFrom, startedTo, endedFrom, endedTo, channel, source, verbose, limit,
+                    currentOffset, status);
+                await pageAction(res);
+                currentOffset += limit;
+
+                if (res.value == null || res.value.Count == 0)
+                    return;
+
+                if (delayMiliseconds > 0)
+                    await Task.Delay(delayMiliseconds);
+            } while (result.Count == 0);
         }
 
         public async Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds)
@@ -122,47 +158,53 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-        public async Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId)
+        public async Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(
+            long campaignId)
         {
             var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities", Method.GET);
             return await ExecuteAsync<List<CampaignIdentity>>(request, true);
         }
 
-        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000)
+        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
+            int limit = 1000000)
         {
             var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}", Method.GET);
             return await ExecuteAsync<List<Contact>>(request, true);
         }
 
-        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000)
+        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
+            string phoneFilter, int limit = 1000000)
         {
-            return await GetContacts(departmentId, new List<string>() {phoneFilter}, limit);
+            return await GetContacts(departmentId, new List<string> {phoneFilter}, limit);
         }
 
-        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000)
+        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
+            List<string> phoneFilter, int limit = 1000000)
         {
             var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}", Method.GET);
             var contacts = await ExecuteAsync<List<Contact>>(request, true);
 
             contacts.Value = contacts.Value
                 .Where(c => c.oo1_guest_phone != null)
-                .Where(c => c.oo1_guest_phone.Any(p => 
+                .Where(c => c.oo1_guest_phone.Any(p =>
                     phoneFilter.Any(
                         pf => p == pf))).ToList();
 
             return contacts;
         }
 
-        public async Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId, Dictionary<string, string> contact)
+        public async Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId,
+            Dictionary<string, string> contact)
         {
-            var res = await CreateContact(departmentId, new List<Dictionary<string, string>>() { contact });
+            var res = await CreateContact(departmentId, new List<Dictionary<string, string>> {contact});
 
             var value = res.contactIds?.FirstOrDefault();
             var response = res.response;
             return (value, response);
         }
 
-        public async Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId, List<Dictionary<string, string>> contacts)
+        public async Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId,
+            List<Dictionary<string, string>> contacts)
         {
             var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}", Method.POST);
             request.AddJsonBody(contacts);
@@ -171,62 +213,22 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<(List<Contact> contact, IRestResponse response)> GetContact(long contactId, long departmentId)
         {
-            var request = await CreateRequest($"api/{Version}/Contacts/{contactId}/departments/{departmentId}", Method.GET);
-            return await ExecuteAsync<List<Contact>>(request, false);
+            var request = await CreateRequest($"api/{Version}/Contacts/{contactId}/departments/{departmentId}",
+                Method.GET);
+            return await ExecuteAsync<List<Contact>>(request);
         }
 
-        public async Task<(List<User> value, IRestResponse response)> GetAllUsers()
-        {
-            _log.LogInformation("GET all users");
-            var request = await CreateRequest($"api/{Version}/users", Method.GET);
-            return await ExecuteAsync<List<User>>(request, true);
-        }
-
-        public async Task<IRestResponse> AddUsers(int companyId, User user)
-        {
-            var request = await CreateRequest($"api/{Version}/users?companyId={companyId}", Method.POST);
-            request.AddJsonBody(user);
-            return (await ExecuteAsync<object>(request, true)).Response;
-        }
-
-        public async Task<IRestResponse> AddTag(int departmentId, mluvii.ApiModels.Tags.CreateTagModel tag)
+        public async Task<IRestResponse> AddTag(int departmentId, CreateTagModel tag)
         {
             var request = await CreateRequest($"api/{Version}/tags/departments/{departmentId}", Method.POST);
             request.AddJsonBody(tag);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-        public async Task<(List<mluvii.ApiModels.Tags.TagModel> value, IRestResponse response)> GetAllTags()
+        public async Task<(List<TagModel> value, IRestResponse response)> GetAllTags()
         {
             var request = await CreateRequest($"api/{Version}/Tags", Method.GET);
-            return (await ExecuteAsync<List<mluvii.ApiModels.Tags.TagModel>>(request, true));
-        }
-
-        public async Task<IRestResponse> AddUserToDepartment(int departmentId, int userId)
-        {
-            var request = await CreateRequest($"api/{Version}/users/{userId}/departments", Method.PUT);
-            request.AddJsonBody(new
-            {
-                departments = new List<int> {departmentId}
-            });
-            return (await ExecuteAsync<object>(request, true)).Response;
-        }
-
-        public async Task<IRestResponse> DisableUsers(List<User> users)
-        {
-            var request = await CreateRequest($"api/{Version}/users", Method.PUT);
-            request.AddJsonBody(users);
-            return (await ExecuteAsync<object>(request, true)).Response;
-        }
-
-        public async Task<IRestResponse> EnableUsers(int userId)
-        {
-            var request = await CreateRequest($"api/{Version}/users/{userId}/enabled", Method.PUT);
-            request.AddJsonBody(new
-            {
-                isEnabled = true
-            });
-            return (await ExecuteAsync<object>(request, true)).Response;
+            return await ExecuteAsync<List<TagModel>>(request, true);
         }
 
         public string GetSessionUrl(long sessionId)
@@ -280,12 +282,10 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-        public async Task<(string email, IRestResponse response)> GetEmailFromSession(long sessionId, int? tenantId = null)
+        public async Task<(string email, IRestResponse response)> GetEmailFromSession(long sessionId,
+            int? tenantId = null)
         {
-            if (tenantId == null)
-            {
-                tenantId = _credentials.Tenant;
-            }
+            if (tenantId == null) tenantId = _credentials.Tenant;
 
             var sessions = await GetSession(sessionId);
             var identityID = sessions.value?.Guest?.Identity;
@@ -333,7 +333,9 @@ namespace APIGateway.Core.MluviiClient
         {
             var url = $"/api/{Version}/Sessions";
 
-            var urlWithArguments = AddArgumentsToUrl(url, GetSessionArguments(startedFrom, startedTo, endedFrom, endedTo, channel, source, limit, offset, status));
+            var urlWithArguments = AddArgumentsToUrl(url,
+                GetSessionArguments(startedFrom, startedTo, endedFrom, endedTo, channel, source, limit, offset,
+                    status));
 
             var request =
                 await CreateRequest(urlWithArguments, Method.GET);
@@ -404,22 +406,10 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-        private string AddSecretToWebhook(string callbackUrl)
+        public async Task<(EmailThreadModel value, IRestResponse response)> GetEmailThread(long emailThread)
         {
-            if(string.IsNullOrEmpty(callbackUrl))
-                throw new Exception("Callback url cannot be empty.");
-
-            if (!string.IsNullOrEmpty(_credentials.WebhookSecret))
-            {
-                var longurl = callbackUrl;
-                var uriBuilder = new UriBuilder(longurl);
-                var query = HttpUtility.ParseQueryString(uriBuilder.Query);
-                query["secret"] = _credentials.WebhookSecret;
-                uriBuilder.Query = query.ToString() ?? string.Empty;
-                callbackUrl = uriBuilder.Uri.ToString();
-            }
-
-            return callbackUrl;
+            var request = await CreateRequest($"api/{Version}/EmailThreads/{emailThread}", Method.GET);
+            return await ExecuteAsync<EmailThreadModel>(request);
         }
 
         public async Task<IRestResponse> AddWebhook(string callBackUrl, List<string> webhookTypes)
@@ -441,14 +431,6 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, verbose)).Response;
         }
 
-        private async Task<RestRequest> CreateRequest(string resource, Method method)
-        {
-            var request = new RestRequest(resource, method); //TBD
-            var token = await _tokenHolder.GetToken();
-            request.AddHeader("Authorization", $"bearer {token}");
-            return request;
-        }
-
         public async Task<(CallParamsModel value, IRestResponse response)> GetCustomData(long sessionId)
         {
             var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}/callparams", Method.GET);
@@ -466,7 +448,74 @@ namespace APIGateway.Core.MluviiClient
         {
             var request = await CreateRequest($"/api/{Version}/Chatbot/{chatbotId}/activity", Method.POST);
             request.AddJsonBody(activity);
-            return (await ExecuteAsync<object>(request, false)).Response;
+            return (await ExecuteAsync<object>(request)).Response;
+        }
+
+        public async Task<(List<User> value, IRestResponse response)> GetAllUsers()
+        {
+            _log.LogInformation("GET all users");
+            var request = await CreateRequest($"api/{Version}/users", Method.GET);
+            return await ExecuteAsync<List<User>>(request, true);
+        }
+
+        public async Task<IRestResponse> AddUsers(int companyId, User user)
+        {
+            var request = await CreateRequest($"api/{Version}/users?companyId={companyId}", Method.POST);
+            request.AddJsonBody(user);
+            return (await ExecuteAsync<object>(request, true)).Response;
+        }
+
+        public async Task<IRestResponse> AddUserToDepartment(int departmentId, int userId)
+        {
+            var request = await CreateRequest($"api/{Version}/users/{userId}/departments", Method.PUT);
+            request.AddJsonBody(new
+            {
+                departments = new List<int> {departmentId}
+            });
+            return (await ExecuteAsync<object>(request, true)).Response;
+        }
+
+        public async Task<IRestResponse> DisableUsers(List<User> users)
+        {
+            var request = await CreateRequest($"api/{Version}/users", Method.PUT);
+            request.AddJsonBody(users);
+            return (await ExecuteAsync<object>(request, true)).Response;
+        }
+
+        public async Task<IRestResponse> EnableUsers(int userId)
+        {
+            var request = await CreateRequest($"api/{Version}/users/{userId}/enabled", Method.PUT);
+            request.AddJsonBody(new
+            {
+                isEnabled = true
+            });
+            return (await ExecuteAsync<object>(request, true)).Response;
+        }
+
+        private string AddSecretToWebhook(string callbackUrl)
+        {
+            if (string.IsNullOrEmpty(callbackUrl))
+                throw new Exception("Callback url cannot be empty.");
+
+            if (!string.IsNullOrEmpty(_credentials.WebhookSecret))
+            {
+                var longurl = callbackUrl;
+                var uriBuilder = new UriBuilder(longurl);
+                var query = HttpUtility.ParseQueryString(uriBuilder.Query);
+                query["secret"] = _credentials.WebhookSecret;
+                uriBuilder.Query = query.ToString() ?? string.Empty;
+                callbackUrl = uriBuilder.Uri.ToString();
+            }
+
+            return callbackUrl;
+        }
+
+        private async Task<RestRequest> CreateRequest(string resource, Method method)
+        {
+            var request = new RestRequest(resource, method); //TBD
+            var token = await _tokenHolder.GetToken();
+            request.AddHeader("Authorization", $"bearer {token}");
+            return request;
         }
 
         private List<string> GetSessionArguments(DateTime? startedFrom, DateTime? startedTo, DateTime? endedFrom,
@@ -476,47 +525,26 @@ namespace APIGateway.Core.MluviiClient
             var addedArguments = new List<string>();
 
             if (startedFrom.HasValue)
-            {
                 addedArguments.Add($"Created.Min={startedFrom.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}");
-            }
 
             if (startedTo.HasValue)
-            {
                 addedArguments.Add($"Created.Max={startedTo.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}");
-            }
 
             if (endedFrom.HasValue)
-            {
                 addedArguments.Add($"Ended.Min={endedFrom.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}");
-            }
 
             if (endedTo.HasValue)
-            {
                 addedArguments.Add($"Ended.Max={endedTo.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}");
-            }
 
-            if (offset.HasValue)
-            {
-                addedArguments.Add($"offset={offset.Value}");
-            }
+            if (offset.HasValue) addedArguments.Add($"offset={offset.Value}");
 
-            if (!string.IsNullOrEmpty(channel))
-            {
-                addedArguments.Add($"Channel={channel}");
-            }
+            if (!string.IsNullOrEmpty(channel)) addedArguments.Add($"Channel={channel}");
 
-            if (!string.IsNullOrEmpty(source))
-            {
-                addedArguments.Add($"Source={source}");
-            }
+            if (!string.IsNullOrEmpty(source)) addedArguments.Add($"Source={source}");
 
             if (status != null && status.Length > 0)
-            {
                 foreach (var oneStatus in status)
-                {
                     addedArguments.Add($"status[]={oneStatus}");
-                }
-            }
 
             addedArguments.Add($"limit={limit}");
 
@@ -527,7 +555,7 @@ namespace APIGateway.Core.MluviiClient
         {
             queryParameters ??= new List<string>();
 
-            string argumentsString = string.Join("&", queryParameters.Where(arg => !string.IsNullOrEmpty(arg)));
+            var argumentsString = string.Join("&", queryParameters.Where(arg => !string.IsNullOrEmpty(arg)));
 
             return !string.IsNullOrEmpty(argumentsString) ? $"{url}?{argumentsString}" : url;
         }
@@ -544,7 +572,6 @@ namespace APIGateway.Core.MluviiClient
 
     public class Contact
     {
-
         public long id { get; set; }
         public string[] oo1_guest_phone { get; set; }
         public string oo1_guest_ident { get; set; }
