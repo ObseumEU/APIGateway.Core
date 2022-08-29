@@ -1,0 +1,8 @@
+- hosts: apigtw
+  become: yes
+  roles:
+    - role: docker
+      vars: 
+        docker_work_dir: "/opt/integrations/{{ NAME }}"
+        ansible_user: "runner"
+        ansible_ssh_user: "runner" 

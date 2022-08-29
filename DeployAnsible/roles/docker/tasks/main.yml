@@ -1,0 +1,22 @@
+---
+
+- name: Creates directory
+  file:
+    path: "{{ docker_work_dir }}"
+    state: directory
+- name: Upload docker compose
+  ansible.builtin.template:
+    src: "../{{ DOCKER_COMPOSE_FILE }}"
+    dest: "{{ docker_work_dir }}/docker-compose.yml"
+- name: Docker pull
+  command: /usr/local/bin/docker-compose pull
+  args:
+    chdir: "{{ docker_work_dir }}"
+- name: Docker kill
+  command: /usr/local/bin/docker-compose kill
+  args:
+    chdir: "{{ docker_work_dir }}"
+- name: Docker up
+  command: /usr/local/bin/docker-compose up -d --remove-orphans
+  args:
+    chdir: "{{ docker_work_dir }}"
