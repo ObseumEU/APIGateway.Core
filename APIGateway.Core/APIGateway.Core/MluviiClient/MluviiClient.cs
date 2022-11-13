@@ -25,19 +25,10 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds);
         Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId);
         Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000);
-
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter,
-            int limit = 1000000);
-
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter,
-            int limit = 1000000);
-
-        Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId,
-            Dictionary<string, string> contact);
-
-        Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId,
-            List<Dictionary<string, string>> contacts);
-
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000);
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000);
+        Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId, Dictionary<string, string> contact);
+        Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId, List<Dictionary<string, string>> contacts);
         Task<(List<Contact> contact, IRestResponse response)> GetContact(long contactId, long departmentId);
         Task<(List<User> value, IRestResponse response)> GetAllUsers();
         Task<IRestResponse> AddUsers(int companyId, User user);
@@ -57,8 +48,8 @@ namespace APIGateway.Core.MluviiClient
         Task<(string value, IRestResponse response)> GetCallParam(long sessionId, string callParamKey);
 
         Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
-            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
-            string source = "", bool verbose = false, int limit = 100000, int? offset = null, string[] status = null);
+            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string[] channel = null,
+            string[] source = null, bool verbose = false, int limit = 100000, int? offset = null, string[] status = null);
 
         Task<(EmailThreadModel value, IRestResponse response)> GetEmailThread(long emailThread);
         Task<(List<OperatorStateModel> value, IRestResponse response)> OperatorStates(bool verbose = false);
@@ -328,14 +319,12 @@ namespace APIGateway.Core.MluviiClient
         }
 
         public async Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
-            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
-            string source = "", bool verbose = false, int limit = 100000, int? offset = null, string[] status = null)
+            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string[] channel = null,
+            string[] source = null, bool verbose = false, int limit = 100000, int? offset = null, string[] status = null)
         {
             var url = $"/api/{Version}/Sessions";
 
-            var urlWithArguments = AddArgumentsToUrl(url,
-                GetSessionArguments(startedFrom, startedTo, endedFrom, endedTo, channel, source, limit, offset,
-                    status));
+            var urlWithArguments = AddArgumentsToUrl(url, GetSessionArguments(startedFrom, startedTo, endedFrom, endedTo, channel, source, limit, offset, status));
 
             var request =
                 await CreateRequest(urlWithArguments, Method.GET);
@@ -536,15 +525,34 @@ namespace APIGateway.Core.MluviiClient
             if (endedTo.HasValue)
                 addedArguments.Add($"Ended.Max={endedTo.Value.ToUniversalTime():yyyy-MM-ddTHH:mm:ss.fffZ}");
 
-            if (offset.HasValue) addedArguments.Add($"offset={offset.Value}");
+            if (offset.HasValue)
+            {
+                addedArguments.Add($"offset={offset.Value}");
+            }
 
-            if (!string.IsNullOrEmpty(channel)) addedArguments.Add($"Channel={channel}");
+            if (channel != null && channel.Length > 0)
+            {
+                foreach (var item in channel)
+                {
+                    addedArguments.Add($"Channel={item}");
+                }
+            }
 
-            if (!string.IsNullOrEmpty(source)) addedArguments.Add($"Source={source}");
+            if (source != null && source.Length > 0)
+            {
+                foreach (var item in source)
+                {
+                    addedArguments.Add($"Source={item}");
+                }
+            }
 
             if (status != null && status.Length > 0)
+            {
                 foreach (var oneStatus in status)
-                    addedArguments.Add($"status[]={oneStatus}");
+                {
+                    addedArguments.Add($"status={oneStatus}");
+                }
+            }
 
             addedArguments.Add($"limit={limit}");
 
@@ -555,7 +563,7 @@ namespace APIGateway.Core.MluviiClient
         {
             queryParameters ??= new List<string>();
 
-            var argumentsString = string.Join("&", queryParameters.Where(arg => !string.IsNullOrEmpty(arg)));
+            string argumentsString = string.Join("&", queryParameters.Where(arg => !string.IsNullOrEmpty(arg)));
 
             return !string.IsNullOrEmpty(argumentsString) ? $"{url}?{argumentsString}" : url;
         }
