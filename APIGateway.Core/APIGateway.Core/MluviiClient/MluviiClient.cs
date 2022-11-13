@@ -251,7 +251,7 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(SessionModel value, IRestResponse response)> GetSession(long sessionId)
         {
             var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}", Method.GET);
-            return await ExecuteAsync<SessionModel>(request, true);
+            return await ExecuteAsync<SessionModel>(request, false);
         }
 
         public async Task<(EmailThreadParamsModel value, IRestResponse response)> GetEmailThreadParam(long threadId)
