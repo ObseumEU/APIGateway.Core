@@ -85,8 +85,8 @@ namespace APIGateway.Core.MluviiClient
 
         Task GetSessionsPaged(Func<(List<SessionModel> value, IRestResponse response), Task> pageAction,
             DateTime? startedFrom = null,
-            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
-            string source = "", bool verbose = false, int limit = 200, string[] status = null,
+            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string[] channel = null,
+            string[] source = null, bool verbose = false, int limit = 200, string[] status = null,
             int delayMiliseconds = 200);
     }
 
@@ -121,8 +121,8 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task GetSessionsPaged(Func<(List<SessionModel> value, IRestResponse response), Task> pageAction,
             DateTime? startedFrom = null,
-            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string channel = "",
-            string source = "", bool verbose = false, int limit = 200, string[] status = null,
+            DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string[] channel = null,
+            string[] source = null, bool verbose = false, int limit = 200, string[] status = null,
             int delayMiliseconds = 200)
         {
             var result = new List<SessionModel>();
