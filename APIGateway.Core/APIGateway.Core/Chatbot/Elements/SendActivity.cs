@@ -68,6 +68,13 @@ namespace APIGateway.Core.Chatbot.Elements
                 sessionId = sessionId.ToString()
             };
         }
+
+        public static SendActivity CreateDisableGuestInputActivity(ActivityBase baseActivity)
+        {
+            var msg = Create(baseActivity);
+            msg.activity = "DisableGuestInput";
+            return msg;
+        }
     }
 
     public class SuggestedAction
