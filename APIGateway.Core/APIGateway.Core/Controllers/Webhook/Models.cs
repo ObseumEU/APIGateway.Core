@@ -10,6 +10,13 @@ namespace APIGateway.Core.Controllers.Webhook
         [JsonProperty("data")] public Data Data { get; set; }
     }
 
+    public class SessionRecordingPostProcessingCompletedPayload
+    {
+        [JsonProperty("eventType")] public string EventType { get; set; }
+
+        [JsonProperty("data")] public Data Data { get; set; }
+    }
+
     public class SessionStarted
     {
         [JsonProperty("eventType")] public string EventType { get; set; }
