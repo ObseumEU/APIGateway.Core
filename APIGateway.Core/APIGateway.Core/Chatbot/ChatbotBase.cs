@@ -49,6 +49,7 @@ namespace APIGateway.Core.Chatbot
             SessionId = activity.sessionId;
             CallParams = GetLocalSessionParam<Dictionary<string, string>>(CALL_PARAMS_KEY);
             IsDebug = GetLocalSessionParam<bool>(IS_DEBUG_KEY);
+            await OnReceiveActivityBase(activity);
 
             _log.LogDebug($"Chatbot received: {new JsonSerializer().Serialize(activity)}");
 
@@ -79,7 +80,6 @@ namespace APIGateway.Core.Chatbot
 
             if (activity.Activity == "Text") await OnReceiveText(activity);
 
-            await OnReceiveActivityBase(activity);
         }
 
         public async Task<IRestResponse> SetupChatbotInMluvii()
