@@ -509,7 +509,7 @@ namespace APIGateway.Core.MluviiClient
 
         private List<string> GetSessionArguments(DateTime? startedFrom, DateTime? startedTo, DateTime? endedFrom,
             DateTime? endedTo,
-            string channel, string source, int limit, int? offset, string[] status)
+            string[] channel, string[] source, int limit, int? offset, string[] status)
         {
             var addedArguments = new List<string>();
 
