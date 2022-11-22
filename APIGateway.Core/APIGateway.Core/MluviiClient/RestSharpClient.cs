@@ -107,7 +107,7 @@ namespace APIGateway.Core.MluviiClient
                 _log.LogInformation(
                     $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
 
-            if (response.StatusCode != HttpStatusCode.OK)
+            if (!(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent))
                 LogError(BaseUrl, request, response);
 
             return (response.Data, response);
