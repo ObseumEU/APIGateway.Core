@@ -305,7 +305,7 @@ namespace APIGateway.Core.MluviiClient
             var body = new UpdateCallParamsModel {CallParams = new Dictionary<string, string> {[key] = value}};
             request.AddJsonBody(body);
 
-            return (await ExecuteAsync<object>(request, true)).Response;
+            return (await ExecuteAsync<object>(request, false)).Response;
         }
 
         public async Task<(string value, IRestResponse response)> GetCallParam(long sessionId, string callParamKey)
