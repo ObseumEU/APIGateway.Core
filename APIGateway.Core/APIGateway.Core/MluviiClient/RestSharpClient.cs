@@ -113,6 +113,21 @@ namespace APIGateway.Core.MluviiClient
             return (response.Data, response);
         }
 
+        public async Task<(string Value, IRestResponse Response)> ExecuteAsync(IRestRequest request,
+            bool logVerbose = false)
+        {
+            base.Timeout = 120000;
+            var response = await base.ExecuteAsync(request);
+            if (logVerbose)
+                _log.LogInformation(
+                    $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+
+            if (!(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent))
+                LogError(BaseUrl, request, response);
+
+            return (response.Content, response);
+        }
+
         public async Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, int minutes = 5,
             bool logVerbose = false)
             where T : class, new()
