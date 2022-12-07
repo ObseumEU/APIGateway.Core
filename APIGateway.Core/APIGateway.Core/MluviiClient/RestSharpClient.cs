@@ -107,7 +107,7 @@ namespace APIGateway.Core.MluviiClient
                 _log.LogInformation(
                     $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
 
-            if (!(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent))
+            if (!(response.IsSuccessful))
                 LogError(BaseUrl, request, response);
 
             return (response.Data, response);
@@ -122,7 +122,7 @@ namespace APIGateway.Core.MluviiClient
                 _log.LogInformation(
                     $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
 
-            if (!(response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent))
+            if (!(response.IsSuccessful))
                 LogError(BaseUrl, request, response);
 
             return (response.Content, response);
