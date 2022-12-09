@@ -29,7 +29,7 @@ namespace APIGateway.Core.Chatbot.Elements
 
         public static SendActivity Create(ActivityBase baseActivity)
         {
-            return Create(baseActivity.sessionId.Value);
+            return Create(baseActivity.sessionId.Value, baseActivity?.timestamp?.AddMilliseconds(100));
         }
 
         public static SendActivity CreateTextActivity(ActivityBase baseActivity, string text)
@@ -40,9 +40,9 @@ namespace APIGateway.Core.Chatbot.Elements
             return msg;
         }
 
-        public static SendActivity CreateTextActivity(long sessionId, string text)
+        public static SendActivity CreateTextActivity(string text, ActivityBase baseActivity)
         {
-            var msg = Create(sessionId);
+            var msg = Create(baseActivity);
             msg.attachments = new List<Attachment>();
             msg.text = text;
             return msg;
@@ -58,11 +58,11 @@ namespace APIGateway.Core.Chatbot.Elements
             };
         }
 
-        public static SendActivity Create(long sessionId)
+        public static SendActivity Create(long sessionId, DateTime? createdDate)
         {
             return new SendActivity
             {
-                timestamp = DateTime.Now.AddMilliseconds(100).ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
+                timestamp = (createdDate == null) ? DateTime.Now.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz") : createdDate.Value.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
                 type = "message",
                 attachments = new List<Attachment>(),
                 sessionId = sessionId.ToString()
