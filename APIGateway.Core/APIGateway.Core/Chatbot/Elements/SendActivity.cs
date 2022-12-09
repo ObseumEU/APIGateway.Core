@@ -62,7 +62,7 @@ namespace APIGateway.Core.Chatbot.Elements
         {
             return new SendActivity
             {
-                timestamp = createdDate.Value.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
+                timestamp = (createdDate == null) ? DateTime.Now.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz") : createdDate.Value.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
                 type = "message",
                 attachments = new List<Attachment>(),
                 sessionId = sessionId.ToString()
