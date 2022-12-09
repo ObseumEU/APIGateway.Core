@@ -29,7 +29,7 @@ namespace APIGateway.Core.Chatbot.Elements
 
         public static SendActivity Create(ActivityBase baseActivity)
         {
-            return Create(baseActivity.sessionId.Value, baseActivity?.timestamp?.AddMilliseconds(100));
+            return Create(baseActivity.sessionId.Value);
         }
 
         public static SendActivity CreateTextActivity(ActivityBase baseActivity, string text)
@@ -58,13 +58,13 @@ namespace APIGateway.Core.Chatbot.Elements
             };
         }
 
-        public static SendActivity Create(long sessionId, DateTime? createdDate)
+        public static SendActivity Create(long sessionId)
         {
             return new SendActivity
             {
-                timestamp = (createdDate == null) ? DateTime.Now.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz") : createdDate.Value.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
+                timestamp = DateTime.Now.ToUniversalTime().ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
                 type = "message",
-                attachments = new List<Attachment>(),
+                attachments = new List<Attachment>(),   
                 sessionId = sessionId.ToString()
             };
         }
