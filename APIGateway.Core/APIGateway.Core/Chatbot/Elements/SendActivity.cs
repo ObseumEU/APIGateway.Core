@@ -58,11 +58,11 @@ namespace APIGateway.Core.Chatbot.Elements
             };
         }
 
-        public static SendActivity Create(long sessionId, DateTime? createdDate = null)
+        public static SendActivity Create(long sessionId, DateTime? createdDate)
         {
             return new SendActivity
             {
-                timestamp = (( createdDate == null) ? DateTime.Now.AddMilliseconds(100) : createdDate ).Value.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"), //Fix delay for bug in ordering messages in chat mluvii. They use only seconds
+                timestamp = createdDate.Value.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
                 type = "message",
                 attachments = new List<Attachment>(),
                 sessionId = sessionId.ToString()
