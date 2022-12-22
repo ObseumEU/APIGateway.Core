@@ -63,6 +63,8 @@ namespace APIGateway.Core.MluviiClient
 
         Task<IRestResponse> UpdateWebhook(int id, List<string> webhookTypes);
 
+        Task<IRestResponse> RemoveWebhook(int id);
+
         /// Webhook is called on endpoint from MluviiCredentialOptions
         Task<IRestResponse> UpdateWebhook(int id, string callbackUrl, List<string> webhookTypes);
 
@@ -380,6 +382,12 @@ namespace APIGateway.Core.MluviiClient
         {
             return await UpdateWebhook(id, _coreOptions.Value.Domain + "/" + _credentials.WebhookEndpoint,
                 webhookTypes);
+        }
+
+        public async Task<IRestResponse> RemoveWebhook(int id)
+        {
+            var request = await CreateRequest($"/api/{Version}/webhooks/{id}", Method.DELETE);
+            return (await ExecuteAsync<object>(request, true)).Response;
         }
 
         /// Webhook is called on endpoint from MluviiCredentialOptions
