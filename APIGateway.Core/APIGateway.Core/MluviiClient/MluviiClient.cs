@@ -155,7 +155,7 @@ namespace APIGateway.Core.MluviiClient
             long campaignId)
         {
             var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities", Method.GET);
-            return await ExecuteAsync<List<CampaignIdentity>>(request, true);
+            return await ExecuteAsync<List<CampaignIdentity>>(request, false);
         }
 
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
