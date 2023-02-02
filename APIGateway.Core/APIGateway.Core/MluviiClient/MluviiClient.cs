@@ -586,7 +586,7 @@ namespace APIGateway.Core.MluviiClient
         }
 
     }
-
+        
     public interface IMluviiUserClient
     {
         Task<(List<User> value, IRestResponse response)> GetAllUsers();
