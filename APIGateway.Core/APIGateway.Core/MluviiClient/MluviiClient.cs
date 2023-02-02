@@ -90,6 +90,7 @@ namespace APIGateway.Core.MluviiClient
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string[] channel = null,
             string[] source = null, bool verbose = false, int limit = 200, string[] status = null,
             int delayMiliseconds = 200);
+        Task<(User value, IRestResponse response)> GetUser(long id);
     }
 
     public class MluviiClient : BaseClient, IMluviiUserClient, IMluviiClient
@@ -118,7 +119,7 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<IRestResponse> AddContactToCampaign(int campaignId, int contactId)
         {
-            return await AddContactToCampaign(campaignId, new List<int> {contactId});
+            return await AddContactToCampaign(campaignId, new List<int> { contactId });
         }
 
         public async Task GetSessionsPaged(Func<(List<SessionModel> value, IRestResponse response), Task> pageAction,
@@ -168,7 +169,7 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
             string phoneFilter, int limit = 1000000)
         {
-            return await GetContacts(departmentId, new List<string> {phoneFilter}, limit);
+            return await GetContacts(departmentId, new List<string> { phoneFilter }, limit);
         }
 
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
@@ -189,7 +190,7 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId,
             Dictionary<string, string> contact)
         {
-            var res = await CreateContact(departmentId, new List<Dictionary<string, string>> {contact});
+            var res = await CreateContact(departmentId, new List<Dictionary<string, string>> { contact });
 
             var value = res.contactIds?.FirstOrDefault();
             var response = res.response;
@@ -304,7 +305,7 @@ namespace APIGateway.Core.MluviiClient
         public async Task<IRestResponse> SetCallParam(long sessionId, string key, string value)
         {
             var request = await CreateRequest($"api/{Version}/Sessions/{sessionId}/callparams", Method.PUT);
-            var body = new UpdateCallParamsModel {CallParams = new Dictionary<string, string> {[key] = value}};
+            var body = new UpdateCallParamsModel { CallParams = new Dictionary<string, string> { [key] = value } };
             request.AddJsonBody(body);
 
             return (await ExecuteAsync<object>(request, false)).Response;
@@ -398,7 +399,8 @@ namespace APIGateway.Core.MluviiClient
             var request = await CreateRequest($"/api/{Version}/webhooks/{id}", Method.PUT);
             request.AddJsonBody(new
             {
-                eventTypes = webhookTypes, callbackUrl
+                eventTypes = webhookTypes,
+                callbackUrl
             });
             return (await ExecuteAsync<object>(request, true)).Response;
         }
@@ -467,7 +469,7 @@ namespace APIGateway.Core.MluviiClient
             var request = await CreateRequest($"api/{Version}/users/{userId}/departments", Method.PUT);
             request.AddJsonBody(new
             {
-                departments = new List<int> {departmentId}
+                departments = new List<int> { departmentId }
             });
             return (await ExecuteAsync<object>(request, true)).Response;
         }
@@ -575,6 +577,14 @@ namespace APIGateway.Core.MluviiClient
 
             return !string.IsNullOrEmpty(argumentsString) ? $"{url}?{argumentsString}" : url;
         }
+
+        public async Task<(User value, IRestResponse response)> GetUser(long id)
+        {
+            _log.LogInformation($"GET user {id}");
+            var request = await CreateRequest($"api/{Version}/users/{id}", Method.GET);
+            return await ExecuteAsync<User>(request, true);
+        }
+
     }
 
     public interface IMluviiUserClient
