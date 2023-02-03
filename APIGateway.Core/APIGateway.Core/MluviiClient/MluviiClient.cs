@@ -454,7 +454,7 @@ namespace APIGateway.Core.MluviiClient
         {
             _log.LogInformation("GET all users");
             var request = await CreateRequest($"api/{Version}/users", Method.GET);
-            return await ExecuteAsync<List<User>>(request, true);
+            return await ExecuteAsync<List<User>>(request, false);
         }
 
         public async Task<IRestResponse> AddUsers(int companyId, User user)
