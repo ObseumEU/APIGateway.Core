@@ -53,7 +53,7 @@ namespace APIGateway.Core
         {
             if (collection.All(x => x.ServiceType != typeof(IJobFactory)))
                 throw new Exception(
-                    "If you want use quartz jobs, you must add Quartz in ServiceCollection. eg. services.AddJobs();");
+                    "If you want use quartz jobs, you must add Quartz in ServiceCollection. eg. services.AddQuartzJobs();");
 
             collection.AddSingleton<T>();
             collection.AddSingleton(new JobSchedule(
