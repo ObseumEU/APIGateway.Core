@@ -585,6 +585,10 @@ namespace APIGateway.Core.MluviiClient
             return await ExecuteAsync<User>(request, true);
         }
 
+        public Task DeleteSessionFiles(long id)
+        {
+            throw new NotImplementedException();
+        }
     }
         
     public interface IMluviiUserClient
