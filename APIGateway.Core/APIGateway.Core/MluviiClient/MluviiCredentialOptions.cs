@@ -10,5 +10,6 @@
         public string WebhookEndpoint { get; set; }
         public int Company { get; set; }
         public int Tenant { get; set; }
+        public bool AutoRetry { get; set; }
     }
 }

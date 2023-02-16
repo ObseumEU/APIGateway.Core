@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using APIGateway.Core.Cache;
 using Microsoft.Extensions.Logging;
@@ -83,9 +84,11 @@ namespace APIGateway.Core.MluviiClient
     {
         public readonly ILogger _log;
         protected ICacheService _cache;
+        public bool AutoRetry { get; set; }
+        public int MaxRetries { get; set; }
 
         public BaseClient(ILogger log, ICacheService cache,
-            string baseUrl)
+            string baseUrl, bool autoRetry = false, int maxRetries = 2)
         {
             _log = log;
             _cache = cache;
@@ -101,16 +104,39 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(T Value, IRestResponse Response)> ExecuteAsync<T>(IRestRequest request,
             bool logVerbose = false)
         {
-            base.Timeout = 120000;
-            var response = await base.ExecuteAsync<T>(request);
-            if (logVerbose)
-                _log.LogInformation(
-                    $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+            if (AutoRetry)
+            {
+                IRestResponse<T> response = null;
+                for (int i = 0; i < MaxRetries; i++)
+                {
+                    response = await base.ExecuteAsync<T>(request);
+                    if (logVerbose)
+                        _log.LogInformation(
+                            $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
 
-            if (!(response.IsSuccessful))
+                    if (response.IsSuccessful)
+                    {
+                        return (response.Data, response);
+                    }
+                }
+
                 LogError(BaseUrl, request, response);
+                return (response.Data, response);
+            }
+            else
+            {
+                base.Timeout = 120000;
+                var response = await base.ExecuteAsync<T>(request);
+                if (logVerbose)
+                    _log.LogInformation(
+                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
 
-            return (response.Data, response);
+                if (!(response.IsSuccessful))
+                {
+                    LogError(BaseUrl, request, response);
+                }
+                return (response.Data, response);
+            }
         }
 
         public async Task<(string Value, IRestResponse Response)> ExecuteAsync(IRestRequest request,
