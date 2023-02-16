@@ -142,19 +142,42 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(string Value, IRestResponse Response)> ExecuteAsync(IRestRequest request,
             bool logVerbose = false)
         {
-            base.Timeout = 120000;
-            var response = await base.ExecuteAsync(request);
-            if (logVerbose)
-                _log.LogInformation(
-                    $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+            if (AutoRetry)
+            {
+                IRestResponse response = null;
+                for (int i = 0; i < MaxRetries; i++)
+                {
+                    response = await base.ExecuteAsync(request);
+                    if (logVerbose)
+                        _log.LogInformation(
+                            $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
 
-            if (!(response.IsSuccessful))
+                    if (response.IsSuccessful)
+                    {
+                        return (response.Content, response);
+                    }
+                }
+
                 LogError(BaseUrl, request, response);
+                return (response.Content, response);
+            }
+            else
+            {
+                base.Timeout = 120000;
+                var response = await base.ExecuteAsync(request);
+                if (logVerbose)
+                    _log.LogInformation(
+                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
 
-            return (response.Content, response);
+                if (!(response.IsSuccessful))
+                    LogError(BaseUrl, request, response);
+
+                return (response.Content, response);
+
+            }
         }
 
-        public async Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, int minutes = 5,
+            public async Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, int minutes = 5,
             bool logVerbose = false)
             where T : class, new()
         {
