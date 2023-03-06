@@ -55,7 +55,7 @@ namespace APIGateway.Core.MluviiClient
             {
                 using (var jsonTextWriter = new JsonTextWriter(stringWriter))
                 {
-                    jsonTextWriter.Formatting = Formatting.Indented;
+                    jsonTextWriter.Formatting = Formatting.None;
                     jsonTextWriter.QuoteChar = '"';
 
                     _serializer.Serialize(jsonTextWriter, obj);
