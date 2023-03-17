@@ -27,9 +27,9 @@ namespace APIGateway.Core.Chatbot.Elements
 
         public Dictionary<string, string> callParams { get; set; }
 
-        public static SendActivity Create(ActivityBase baseActivity)
+        public static SendActivity Create(ActivityBase baseActivity, DateTime? timestamp = null)
         {
-            return Create(baseActivity.sessionId.Value);
+            return Create(baseActivity.sessionId.Value, timestamp);
         }
 
         public static SendActivity CreateTextActivity(ActivityBase baseActivity, string text)
@@ -58,11 +58,11 @@ namespace APIGateway.Core.Chatbot.Elements
             };
         }
 
-        public static SendActivity Create(long sessionId)
+        public static SendActivity Create(long sessionId, DateTime? timestamp = null)
         {
             return new SendActivity
             {
-                timestamp = DateTime.Now.ToUniversalTime().ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
+                timestamp = (timestamp == null ? DateTime.Now : timestamp.Value).ToUniversalTime().ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
                 type = "message",
                 attachments = new List<Attachment>(),   
                 sessionId = sessionId.ToString()
