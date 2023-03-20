@@ -73,6 +73,7 @@ namespace APIGateway.Core.MluviiClient
         Task<(CallParamsModel value, IRestResponse response)> GetCustomData(long sessionId);
         Task<IRestResponse> RemoveTagFromSession(int tagId, long sessionId);
         Task<IRestResponse> SendChatbotActivity(int chatbotId, object activity);
+        Task<IRestResponse> DeleteFile(long sessionId, long fileId, bool verbose = false);
 
         Task<(T Value, IRestResponse Response)> ExecuteAsync<T>(IRestRequest request,
             bool logVerbose = false);
@@ -585,9 +586,18 @@ namespace APIGateway.Core.MluviiClient
             return await ExecuteAsync<User>(request, true);
         }
 
-        public Task DeleteSessionFiles(long id)
+        public async Task<IRestResponse> DeleteFile(long sessionId, long fileId, bool verbose = false)
         {
-            throw new NotImplementedException();
+
+            var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}/files", Method.DELETE);
+            request.AddJsonBody(new
+            {
+                fileIds= new long[]
+                {
+                    fileId
+                }
+            });
+            return (await ExecuteAsync<object>(request, verbose)).Response;
         }
     }
         
