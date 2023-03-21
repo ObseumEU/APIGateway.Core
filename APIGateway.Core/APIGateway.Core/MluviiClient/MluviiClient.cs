@@ -23,7 +23,7 @@ namespace APIGateway.Core.MluviiClient
     {
         Task<IRestResponse> AddContactToCampaign(int campaignId, int contactId);
         Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds);
-        Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId);
+        Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId, long currentOffset, long limit = 1000);
         Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000);
         Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000);
         Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000);
@@ -91,6 +91,7 @@ namespace APIGateway.Core.MluviiClient
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string[] channel = null,
             string[] source = null, bool verbose = false, int limit = 200, string[] status = null,
             int delayMiliseconds = 200);
+        Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000);
         Task<(User value, IRestResponse response)> GetUser(long id);
     }
 
@@ -154,10 +155,28 @@ namespace APIGateway.Core.MluviiClient
         }
 
         public async Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(
-            long campaignId)
+            long campaignId, long currentOffset, long limit = 1000)
         {
-            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities", Method.GET);
-            return await ExecuteAsync<List<CampaignIdentity>>(request, false);
+            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities?offset={currentOffset}$limit={limit}", Method.GET);
+            return await ExecuteAsync<List<CampaignIdentity>>(request, true);
+        }
+
+        public async Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000)
+        {
+            var result = new List<SessionModel>();
+            long currentOffset = 0;
+            do
+            {
+                var res = await GetCampaignIndetities(campaignId, currentOffset, limit);
+                await pageAction(res);
+                currentOffset += limit;
+
+                if (res.identities== null || res.identities.Count == 0)
+                    return;
+
+                if (delayMiliseconds > 0)
+                    await Task.Delay(delayMiliseconds);
+            } while (result.Count == 0);
         }
 
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
