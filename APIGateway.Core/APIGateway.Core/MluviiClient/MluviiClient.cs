@@ -78,7 +78,7 @@ namespace APIGateway.Core.MluviiClient
         Task<(T Value, IRestResponse Response)> ExecuteAsync<T>(IRestRequest request,
             bool logVerbose = false);
 
-        Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, int minutes = 5,
+        Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, double minutes = 5,
             bool logVerbose = false)
             where T : class, new();
 
