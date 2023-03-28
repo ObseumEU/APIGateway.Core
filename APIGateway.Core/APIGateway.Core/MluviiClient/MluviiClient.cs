@@ -158,7 +158,7 @@ namespace APIGateway.Core.MluviiClient
             long campaignId, long currentOffset, long limit = 1000)
         {
             var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities?offset={currentOffset}$limit={limit}", Method.GET);
-            return await ExecuteAsync<List<CampaignIdentity>>(request, true);
+            return await ExecuteAsync<List<CampaignIdentity>>(request, false);
         }
 
         public async Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000)
