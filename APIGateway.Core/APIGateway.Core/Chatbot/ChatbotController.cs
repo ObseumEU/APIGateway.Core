@@ -30,7 +30,8 @@ namespace APIGateway.Core.Chatbot
                 return Ok();
 
             _log.LogInformation($"Receive webhook from mluvii to chatbot: {JsonConvert.SerializeObject(activity)}");
-            ThreadPool.QueueUserWorkItem(async x =>
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            Task.Run(async () =>
             {
                 using (var scope = _provide.CreateScope())
                 {
@@ -39,7 +40,17 @@ namespace APIGateway.Core.Chatbot
                     try
                     {
                         var _chatbot = scope.ServiceProvider.GetService<IChatbotBase>();
-                        await _chatbot.OnReceiveActivity(activity);
+                        await _chatbot.OnReceiveActivity(new ActivityBase()
+                        {
+                            Activity = activity.Activity,
+                            callParams = activity.callParams,
+                            Language = activity.Language,
+                            sessionId = activity.sessionId,
+                            Source = activity.Source,
+                            Text = activity.Text,
+                            timestamp = activity.timestamp,
+                            type = activity.type
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -47,6 +58,7 @@ namespace APIGateway.Core.Chatbot
                     }
                 }
             });
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             return Ok();
         }
 
