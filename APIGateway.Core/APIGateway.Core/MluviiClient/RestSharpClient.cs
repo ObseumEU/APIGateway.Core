@@ -103,7 +103,7 @@ namespace APIGateway.Core.MluviiClient
         }
 
         public async Task<(T Value, IRestResponse Response)> ExecuteAsync<T>(IRestRequest request,
-            bool logVerbose = false)
+            bool logVerbose = false, bool ignoreErrors = false)
         {
             if (AutoRetry)
             {
@@ -121,7 +121,8 @@ namespace APIGateway.Core.MluviiClient
                     }
                 }
 
-                LogError(BaseUrl, request, response);
+                
+                LogError(BaseUrl, request, response, ignoreErrors);
                 return (response.Data, response);
             }
             else
@@ -134,7 +135,7 @@ namespace APIGateway.Core.MluviiClient
 
                 if (!(response.IsSuccessful))
                 {
-                    LogError(BaseUrl, request, response);
+                    LogError(BaseUrl, request, response, ignoreErrors);
                 }
                 return (response.Data, response);
             }
@@ -209,7 +210,8 @@ namespace APIGateway.Core.MluviiClient
 
         private void LogError(Uri BaseUrl,
             IRestRequest request,
-            IRestResponse response)
+            IRestResponse response,
+            bool ignoreErrors = false)
         {
             //Get the values of the parameters passed to the API
             var parameters = string.Join(", ",
@@ -236,7 +238,10 @@ namespace APIGateway.Core.MluviiClient
             }
 
             //Log the exception and info message
-            _log.LogError(ex, info);
+            if(ignoreErrors)
+                _log.LogInformation(ex, info);
+            else
+                _log.LogError(ex, info);
         }
     }
 }
