@@ -35,7 +35,7 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> AddTag(int departmentId, CreateTagModel tag);
         Task<(List<TagModel> value, IRestResponse response)> GetAllTags();
         Task<IRestResponse> AddUserToDepartment(int departmentId, int userId);
-        Task<IRestResponse> DisableUsers(List<User> users);
+        Task<IRestResponse> DisableUsers(List<User> users, bool ignoreErrors);
         Task<IRestResponse> EnableUsers(int userId);
         string GetSessionUrl(long sessionId);
         Task<IRestResponse> SetChatbotCallbackUrl(int chatbotId, string callbackUrl);
@@ -76,7 +76,7 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> DeleteFile(long sessionId, long fileId, bool verbose = false);
 
         Task<(T Value, IRestResponse Response)> ExecuteAsync<T>(IRestRequest request,
-            bool logVerbose = false);
+            bool logVerbose = false, bool ignoreErrors = false);
 
         Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, double minutes = 5,
             bool logVerbose = false)
@@ -494,7 +494,7 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-        public async Task<IRestResponse> DisableUsers(List<User> users)
+        public async Task<IRestResponse> DisableUsers(List<User> users, bool ignoreErrors = false)
         {
             var request = await CreateRequest($"api/{Version}/users", Method.PUT);
             request.AddJsonBody(users);
@@ -625,7 +625,7 @@ namespace APIGateway.Core.MluviiClient
         Task<(List<User> value, IRestResponse response)> GetAllUsers();
         Task<IRestResponse> AddUsers(int companyId, User user);
         Task<IRestResponse> AddUserToDepartment(int departmentId, int userId);
-        Task<IRestResponse> DisableUsers(List<User> users);
+        Task<IRestResponse> DisableUsers(List<User> users, bool ignoreErrors);
         Task<IRestResponse> EnableUsers(int userId);
     }
 
