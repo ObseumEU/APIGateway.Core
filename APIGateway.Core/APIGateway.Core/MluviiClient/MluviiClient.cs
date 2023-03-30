@@ -179,6 +179,26 @@ namespace APIGateway.Core.MluviiClient
             } while (result.Count == 0);
         }
 
+        public async Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task<bool>> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000)
+        {
+            var result = new List<SessionModel>();
+            long currentOffset = 0;
+            do
+            {
+                var res = await GetCampaignIndetities(campaignId, currentOffset, limit);
+                var processNext = await pageAction(res);
+                if (!processNext)
+                    break;
+                currentOffset += limit;
+
+                if (res.identities == null || res.identities.Count == 0)
+                    return;
+
+                if (delayMiliseconds > 0)
+                    await Task.Delay(delayMiliseconds);
+            } while (result.Count == 0);
+        }
+
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
             int limit = 1000000)
         {
