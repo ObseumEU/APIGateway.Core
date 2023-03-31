@@ -188,7 +188,8 @@ namespace APIGateway.Core.MluviiClient
                 var res = await GetCampaignIndetities(campaignId, currentOffset, limit);
                 var processNext = await pageAction(res);
                 if (!processNext)
-                    break;
+                    return;
+
                 currentOffset += limit;
 
                 if (res.identities == null || res.identities.Count == 0)
