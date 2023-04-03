@@ -182,13 +182,13 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task<bool>> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000)
         {
-            var result = new List<SessionModel>();
+            (List<CampaignIdentity> identities, IRestResponse response) res = (null, null);
             long currentOffset = 0;
             int errors = 0;
             do
             {
                 try{
-                    var res = await GetCampaignIndetities(campaignId, currentOffset, limit);
+                    res = await GetCampaignIndetities(campaignId, currentOffset, limit);
                     var processNext = await pageAction(res);
                     if (!processNext)
                         return;
@@ -209,13 +209,13 @@ namespace APIGateway.Core.MluviiClient
                     if (errors == 3)
                         return;
                 }
-            } while (result.Count == 0);
+            } while (res.identities?.Count == 0);
         }
 
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
             int limit = 10000, long offset = 0)
         {
-            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}?offset={offset}%limit={limit}", Method.GET);
+            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}?offset={offset}&limit={limit}", Method.GET);
             return await ExecuteAsync<List<Contact>>(request, true);
         }
 
