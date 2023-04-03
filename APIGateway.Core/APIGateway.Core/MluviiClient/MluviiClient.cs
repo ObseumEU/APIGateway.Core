@@ -183,20 +183,31 @@ namespace APIGateway.Core.MluviiClient
         {
             var result = new List<SessionModel>();
             long currentOffset = 0;
+            int errors = 0;
             do
             {
-                var res = await GetCampaignIndetities(campaignId, currentOffset, limit);
-                var processNext = await pageAction(res);
-                if (!processNext)
-                    return;
+                try{
+                    var res = await GetCampaignIndetities(campaignId, currentOffset, limit);
+                    var processNext = await pageAction(res);
+                    if (!processNext)
+                        return;
 
-                currentOffset += limit;
+                    currentOffset += limit;
 
-                if (res.identities == null || res.identities.Count == 0)
-                    return;
+                    if (res.identities == null || res.identities.Count == 0)
+                        return;
 
-                if (delayMiliseconds > 0)
-                    await Task.Delay(delayMiliseconds);
+                    if (delayMiliseconds > 0)
+                        await Task.Delay(delayMiliseconds);
+                    errors = 0;
+                }
+                catch(Exception ex)
+                {
+                    errors++;
+                    _log.LogError(ex, "failed get identities");
+                    if (errors == 3)
+                        return;
+                }
             } while (result.Count == 0);
         }
 
