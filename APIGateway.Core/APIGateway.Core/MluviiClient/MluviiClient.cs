@@ -24,10 +24,10 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> AddContactToCampaign(int campaignId, int contactId);
         Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds);
         Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId, long currentOffset, long limit = 1000);
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000);
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000, long offset = 0);
         Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000);
         Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000);
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContactsPaged(Func<(List<SessionModel> value, IRestResponse response), Task> pageAction, int departmentId, int limit = 1000);
+        Task GetContactsPaged(Func<(List<Contact> value, IRestResponse response), Task> pageAction, int departmentId, int limit = 1000, int delayMiliseconds = 50);
         Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId, Dictionary<string, string> contact);
         Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId, List<Dictionary<string, string>> contacts);
         Task<(List<Contact> contact, IRestResponse response)> GetContact(long contactId, long departmentId);
