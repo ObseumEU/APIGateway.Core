@@ -530,6 +530,10 @@ namespace APIGateway.Core.MluviiClient
         public async Task<IRestResponse> DisableUser(long userId)
         {
             var request = await CreateRequest($"/api/{Version}/Users/{userId}/enabled", Method.PUT);
+            request.AddJsonBody(new
+            {
+                isEnabled = false
+            });
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
