@@ -535,7 +535,7 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<IRestResponse> EnableUsers(int userId)
         {
-            var request = await CreateRequest($"api/{Version}/users/{userId}/enabled", Method.PUT);
+            var request = await CreateRequest($"api/{Version}/Users/{userId}/enabled", Method.PUT);
             request.AddJsonBody(new
             {
                 isEnabled = true
