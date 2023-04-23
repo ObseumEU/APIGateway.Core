@@ -24,10 +24,9 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> AddContactToCampaign(int campaignId, int contactId);
         Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds);
         Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId, long currentOffset, long limit = 1000);
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000, long offset = 0);
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000);
         Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000);
         Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000);
-        Task GetContactsPaged(Func<(List<Contact> value, IRestResponse response), Task> pageAction, int departmentId, int limit = 1000, int delayMiliseconds = 50);
         Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId, Dictionary<string, string> contact);
         Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId, List<Dictionary<string, string>> contacts);
         Task<(List<Contact> contact, IRestResponse response)> GetContact(long contactId, long departmentId);
@@ -36,7 +35,7 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> AddTag(int departmentId, CreateTagModel tag);
         Task<(List<TagModel> value, IRestResponse response)> GetAllTags();
         Task<IRestResponse> AddUserToDepartment(int departmentId, int userId);
-        Task<IRestResponse> DisableUser(long userId);
+        Task<IRestResponse> DisableUsers(List<User> users);
         Task<IRestResponse> EnableUsers(int userId);
         string GetSessionUrl(long sessionId);
         Task<IRestResponse> SetChatbotCallbackUrl(int chatbotId, string callbackUrl);
@@ -77,7 +76,7 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> DeleteFile(long sessionId, long fileId, bool verbose = false);
 
         Task<(T Value, IRestResponse Response)> ExecuteAsync<T>(IRestRequest request,
-            bool logVerbose = false, bool ignoreErrors = false);
+            bool logVerbose = false);
 
         Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, double minutes = 5,
             bool logVerbose = false)
@@ -158,7 +157,7 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(
             long campaignId, long currentOffset, long limit = 1000)
         {
-            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities?offset={currentOffset}&limit={limit}", Method.GET);
+            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities?offset={currentOffset}$limit={limit}", Method.GET);
             return await ExecuteAsync<List<CampaignIdentity>>(request, false);
         }
 
@@ -180,42 +179,10 @@ namespace APIGateway.Core.MluviiClient
             } while (result.Count == 0);
         }
 
-        public async Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task<bool>> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000)
-        {
-            (List<CampaignIdentity> identities, IRestResponse response) res = (null, null);
-            long currentOffset = 0;
-            int errors = 0;
-            do
-            {
-                try{
-                    res = await GetCampaignIndetities(campaignId, currentOffset, limit);
-                    var processNext = await pageAction(res);
-                    if (!processNext)
-                        return;
-
-                    currentOffset += limit;
-
-                    if (res.identities == null || res.identities.Count == 0)
-                        return;
-
-                    if (delayMiliseconds > 0)
-                        await Task.Delay(delayMiliseconds);
-                    errors = 0;
-                }
-                catch(Exception ex)
-                {
-                    errors++;
-                    _log.LogError(ex, "failed get identities");
-                    if (errors == 3)
-                        return;
-                }
-            } while (res.identities?.Count == 0);
-        }
-
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
-            int limit = 10000, long offset = 0)
+            int limit = 1000000)
         {
-            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}?offset={offset}&limit={limit}", Method.GET);
+            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}", Method.GET);
             return await ExecuteAsync<List<Contact>>(request, true);
         }
 
@@ -527,19 +494,16 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
-        public async Task<IRestResponse> DisableUser(long userId)
+        public async Task<IRestResponse> DisableUsers(List<User> users)
         {
-            var request = await CreateRequest($"/api/{Version}/Users/{userId}/enabled", Method.PUT);
-            request.AddJsonBody(new
-            {
-                isEnabled = false
-            });
+            var request = await CreateRequest($"api/{Version}/users", Method.PUT);
+            request.AddJsonBody(users);
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
         public async Task<IRestResponse> EnableUsers(int userId)
         {
-            var request = await CreateRequest($"api/{Version}/Users/{userId}/enabled", Method.PUT);
+            var request = await CreateRequest($"api/{Version}/users/{userId}/enabled", Method.PUT);
             request.AddJsonBody(new
             {
                 isEnabled = true
@@ -654,24 +618,6 @@ namespace APIGateway.Core.MluviiClient
             });
             return (await ExecuteAsync<object>(request, verbose)).Response;
         }
-
-        public async Task GetContactsPaged(Func<(List<Contact> value, IRestResponse response), Task> pageAction, int departmentId, int limit = 1000, int delayMiliseconds = 50)
-        { 
-            var currentOffset = 0;
-            (List<Contact> contactIds, IRestResponse response) res;
-            do
-            {
-                res = await GetContacts(departmentId,limit, currentOffset);
-                await pageAction(res);
-                currentOffset += limit;
-
-                if (res.contactIds == null || res.contactIds.Count == 0)
-                    return;
-
-                if (delayMiliseconds > 0)
-                    await Task.Delay(delayMiliseconds);
-            } while (res.contactIds.Count == 0);
-        }
     }
         
     public interface IMluviiUserClient
@@ -679,7 +625,7 @@ namespace APIGateway.Core.MluviiClient
         Task<(List<User> value, IRestResponse response)> GetAllUsers();
         Task<IRestResponse> AddUsers(int companyId, User user);
         Task<IRestResponse> AddUserToDepartment(int departmentId, int userId);
-        Task<IRestResponse> DisableUser(long userId);
+        Task<IRestResponse> DisableUsers(List<User> users);
         Task<IRestResponse> EnableUsers(int userId);
     }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using APIGateway.Core.Chatbot.Activities;
@@ -40,6 +40,9 @@ namespace APIGateway.Core.Chatbot
                     try
                     {
                         var _chatbot = scope.ServiceProvider.GetService<IChatbotBase>();
+                        if (_chatbot == null)
+                            localLog.LogError("IChatbotBase cannot be null");
+
                         await _chatbot.OnReceiveActivity(new ActivityBase()
                         {
                             Activity = activity.Activity,
