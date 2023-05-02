@@ -34,8 +34,8 @@ namespace APIGateway.Core.Controllers.Webhook
 
         [JsonProperty("started")] public DateTimeOffset? Started { get; set; }
 
-        [JsonProperty("ended")] public DateTimeOffset Ended { get; set; }
+        [JsonProperty("ended")] public DateTimeOffset? Ended { get; set; }
 
-        [JsonProperty("tenantId")] public int TenantId { get; set; }
+        [JsonProperty("tenantId")] public int? TenantId { get; set; }
     }
 }
