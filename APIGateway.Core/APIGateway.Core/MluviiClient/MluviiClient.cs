@@ -45,6 +45,7 @@ namespace APIGateway.Core.MluviiClient
         Task<(string email, IRestResponse response)> GetEmailFromSession(long sessionId, int? tenantId = null);
         Task<(IDictionary<string, string> value, IRestResponse response)> GetCallParams(long sessionId);
         Task<IRestResponse> SetCallParam(long sessionId, string key, string value);
+        Task<IRestResponse> SetCallParams(long sessionId, Dictionary<string, string> callparams);
         Task<(string value, IRestResponse response)> GetCallParam(long sessionId, string callParamKey);
 
         Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
@@ -326,6 +327,16 @@ namespace APIGateway.Core.MluviiClient
         {
             var request = await CreateRequest($"api/{Version}/Sessions/{sessionId}/callparams", Method.PUT);
             var body = new UpdateCallParamsModel { CallParams = new Dictionary<string, string> { [key] = value } };
+            request.AddJsonBody(body);
+
+            return (await ExecuteAsync<object>(request, false)).Response;
+        }
+
+
+        public async Task<IRestResponse> SetCallParams(long sessionId, Dictionary<string,string> callparams)
+        {
+            var request = await CreateRequest($"api/{Version}/Sessions/{sessionId}/callparams", Method.PUT);
+            var body = new UpdateCallParamsModel { CallParams = callparams };
             request.AddJsonBody(body);
 
             return (await ExecuteAsync<object>(request, false)).Response;
