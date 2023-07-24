@@ -16,6 +16,8 @@ namespace APIGateway.Core.Chatbot.Elements
         [JsonProperty("timestamp")] public string timestamp { get; set; }
 
         [JsonProperty("attachments")] public List<Attachment> attachments { get; set; }
+        
+        [JsonProperty("attachmentLayout")] public string attachmentLayout {get;set;}
 
         [JsonProperty("activity")] public string activity { get; set; }
 
