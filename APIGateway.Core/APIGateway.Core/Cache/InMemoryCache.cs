@@ -22,7 +22,7 @@ namespace APIGateway.Core.Cache
 
         public void Set(string cacheKey, object item, double minutes)
         {
-            if (item != null) MemoryCache.Default.Add(cacheKey, item, DateTime.Now.AddMinutes(minutes));
+            if (item != null) MemoryCache.Default.Set(cacheKey, item, DateTime.Now.AddMinutes(minutes));
         }
 
         public async Task<T> GetOrLoadFromCache<T>(Func<Task<T>> callbackDelegate, string key, double minutes)
