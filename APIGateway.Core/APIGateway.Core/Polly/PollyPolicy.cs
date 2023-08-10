@@ -24,7 +24,7 @@ namespace APIGateway.Core.Polly
         {
             return Policy
                 .Handle<Exception>()
-                .WaitAndRetryAsync(count, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), (exception, retryCount, context) => _log.LogError($"try: {retryCount}, Message: {logRetryMessage} Exception: {exception.Message}"));
+                .WaitAndRetryAsync(count, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), (exception, retryCount, context) => _log.LogError($"try: {retryCount}, Message: {logRetryMessage} Exception: {exception.Message} InnerException:{exception.InnerException?.Message}"));
         }
     }
 }
