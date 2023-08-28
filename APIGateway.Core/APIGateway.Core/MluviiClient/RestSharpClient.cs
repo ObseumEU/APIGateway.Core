@@ -31,7 +31,7 @@ namespace APIGateway.Core.MluviiClient
                 DateTimeZoneHandling = DateTimeZoneHandling.Unspecified
             };
 
-            _serializer.Converters.Add(new StringEnumConverter());
+            _serializer.Converters.Add(new SafeStringEnumConverter());
         }
 
         public JsonSerializer(Newtonsoft.Json.JsonSerializer serializer)
