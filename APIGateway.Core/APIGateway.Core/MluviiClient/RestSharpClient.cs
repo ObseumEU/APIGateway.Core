@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -105,15 +106,18 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(T Value, IRestResponse Response)> ExecuteAsync<T>(IRestRequest request,
             bool logVerbose = false)
         {
+            var sw = Stopwatch.StartNew();
+           
             if (AutoRetry)
             {
                 IRestResponse<T> response = null;
                 for (int i = 0; i < MaxRetries; i++)
                 {
                     response = await base.ExecuteAsync<T>(request);
+                    sw.Stop();
                     if (logVerbose)
                         _log.LogInformation(
-                            $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+                            $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed.ToString("hh:mm:ss")}");
 
                     if (response.IsSuccessful)
                     {
@@ -128,14 +132,16 @@ namespace APIGateway.Core.MluviiClient
             {
                 base.Timeout = 120000;
                 var response = await base.ExecuteAsync<T>(request);
+                sw.Stop();
                 if (logVerbose)
                     _log.LogInformation(
-                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed.ToString("hh:mm:ss")}");
 
                 if (!(response.IsSuccessful))
                 {
                     LogError(BaseUrl, request, response);
                 }
+               
                 return (response.Data, response);
             }
         }
