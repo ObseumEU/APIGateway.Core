@@ -275,7 +275,7 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(SessionModel value, IRestResponse response)> GetSession(long sessionId)
         {
             var request = await CreateRequest($"/api/{Version}/Sessions/{sessionId}", Method.GET);
-            return await ExecuteAsync<SessionModel>(request, false);
+            return await ExecuteAsync<SessionModel>(request, true);
         }
 
         public async Task<(EmailThreadParamsModel value, IRestResponse response)> GetEmailThreadParam(long threadId)
@@ -329,7 +329,7 @@ namespace APIGateway.Core.MluviiClient
             var body = new UpdateCallParamsModel { CallParams = new Dictionary<string, string> { [key] = value } };
             request.AddJsonBody(body);
 
-            return (await ExecuteAsync<object>(request, false)).Response;
+            return (await ExecuteAsync<object>(request, true)).Response;
         }
 
 
@@ -339,7 +339,7 @@ namespace APIGateway.Core.MluviiClient
             var body = new UpdateCallParamsModel { CallParams = callparams };
             request.AddJsonBody(body);
 
-            return (await ExecuteAsync<object>(request, false)).Response;
+            return (await ExecuteAsync<object>(request, true)).Response;
         }
 
         public async Task<(string value, IRestResponse response)> GetCallParam(long sessionId, string callParamKey)
