@@ -149,15 +149,17 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(string Value, IRestResponse Response)> ExecuteAsync(IRestRequest request,
             bool logVerbose = false)
         {
+            var sw = Stopwatch.StartNew();
             if (AutoRetry)
             {
                 IRestResponse response = null;
                 for (int i = 0; i < MaxRetries; i++)
                 {
                     response = await base.ExecuteAsync(request);
+                    sw.Stop();
                     if (logVerbose)
                         _log.LogInformation(
-                            $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+                            $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
 
                     if (response.IsSuccessful)
                     {
@@ -172,9 +174,10 @@ namespace APIGateway.Core.MluviiClient
             {
                 base.Timeout = 120000;
                 var response = await base.ExecuteAsync(request);
+                sw.Stop();
                 if (logVerbose)
                     _log.LogInformation(
-                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
 
                 if (!(response.IsSuccessful))
                     LogError(BaseUrl, request, response);
@@ -188,14 +191,15 @@ namespace APIGateway.Core.MluviiClient
             bool logVerbose = false)
             where T : class, new()
         {
+            var sw = Stopwatch.StartNew();
             var item = _cache.Get<T>(cacheKey);
             if (item == null)
             {
                 var response = await base.ExecuteAsync<T>(request);
-
+                sw.Stop();
                 if (logVerbose)
                     _log.LogInformation(
-                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
@@ -206,7 +210,7 @@ namespace APIGateway.Core.MluviiClient
                 {
                     LogError(BaseUrl, request, response);
                     throw new Exception(
-                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body} Response Content: {response.Content} StatusCode: {response.StatusCode}");
+                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
                 }
             }
 
