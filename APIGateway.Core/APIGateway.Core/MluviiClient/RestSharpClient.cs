@@ -223,7 +223,7 @@ namespace APIGateway.Core.MluviiClient
         {
             //Get the values of the parameters passed to the API
             var parameters = string.Join(", ",
-                request.Parameters.Select(x => x.Name.ToString() + "=" + (x.Value == null ? "NULL" : x.Value))
+                request.Parameters.Where(p => p.Name != "Authorization").Select(x => x.Name.ToString() + "=" + (x.Value == null ? "NULL" : x.Value))
                     .ToArray());
 
             //Set up the information message with the URL, 
