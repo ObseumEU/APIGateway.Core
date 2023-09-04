@@ -95,7 +95,7 @@ namespace APIGateway.Core.MluviiClient
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string[] channel = null,
             string[] source = null, bool verbose = false, int limit = 200, string[] status = null,
             int delayMiliseconds = 200);
-        Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000);
+        Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task<bool>> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000);
         Task<(User value, IRestResponse response)> GetUser(long id);
     }
 
@@ -158,6 +158,7 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, true)).Response;
         }
 
+        
         public async Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(
             long campaignId, long currentOffset, long limit = 1000)
         {
@@ -172,7 +173,10 @@ namespace APIGateway.Core.MluviiClient
             do
             {
                 var res = await GetCampaignIndetities(campaignId, currentOffset, limit);
-                await pageAction(res);
+                var continueRes = await pageAction(res);
+                if (!continueRes)
+                    break;
+
                 currentOffset += limit;
 
                 if (res.identities== null || res.identities.Count == 0)
@@ -651,6 +655,8 @@ namespace APIGateway.Core.MluviiClient
             });
             return (await ExecuteAsync<object>(request, verbose)).Response;
         }
+
+
     }
         
     public interface IMluviiUserClient
