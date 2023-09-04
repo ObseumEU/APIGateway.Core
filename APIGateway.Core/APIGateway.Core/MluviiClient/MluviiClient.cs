@@ -155,7 +155,7 @@ namespace APIGateway.Core.MluviiClient
         {
             var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/contacts", Method.POST);
             request.AddJsonBody(contactIds);
-            return (await ExecuteAsync<object>(request, true)).Response;
+            return (await ExecuteAsync(request, true)).Response;
         }
 
         
@@ -174,12 +174,12 @@ namespace APIGateway.Core.MluviiClient
             {
                 var res = await GetCampaignIndetities(campaignId, currentOffset, limit);
                 var continueRes = await pageAction(res);
-                if (continueRes)
+                if (!continueRes)
                     break;
 
                 currentOffset += limit;
 
-                if (res.identities== null || res.identities.Count == 0)
+                if (res.identities == null || res.identities.Count == 0 || res.identities.Count < limit)
                     return;
 
                 if (delayMiliseconds > 0)

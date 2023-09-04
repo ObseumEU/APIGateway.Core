@@ -159,7 +159,7 @@ namespace APIGateway.Core.MluviiClient
                     sw.Stop();
                     if (logVerbose)
                         _log.LogInformation(
-                            $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
+                            $"RequestUrl: {BuildUri(request)} RequestBody: {JsonConvert.SerializeObject(request.Body.Value)} Params:{request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
 
                     if (response.IsSuccessful)
                     {
