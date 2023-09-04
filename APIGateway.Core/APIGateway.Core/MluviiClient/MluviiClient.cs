@@ -174,7 +174,7 @@ namespace APIGateway.Core.MluviiClient
             {
                 var res = await GetCampaignIndetities(campaignId, currentOffset, limit);
                 var continueRes = await pageAction(res);
-                if (!continueRes)
+                if (continueRes)
                     break;
 
                 currentOffset += limit;
