@@ -143,7 +143,7 @@ namespace APIGateway.Core.MluviiClient
                 await pageAction(res);
                 currentOffset += limit;
 
-                if (res.value == null || res.value.Count == 0)
+                if (res.value == null || res.value.Count == 0 || res.value.Count < limit)
                     return;
 
                 if (delayMiliseconds > 0)
@@ -153,9 +153,15 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds)
         {
-            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/contacts", Method.POST);
-            request.AddJsonBody(contactIds);
-            return (await ExecuteAsync(request, true)).Response;
+            var body = new
+            {
+                ids = contactIds.ToArray(),
+                contactInfoField = "oo1_guest_phone"
+
+            };
+            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities", Method.POST);
+            request.AddJsonBody(body);
+            return (await ExecuteAsync<object>(request, true)).Response;
         }
 
         
