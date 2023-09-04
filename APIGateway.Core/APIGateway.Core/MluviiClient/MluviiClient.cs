@@ -188,14 +188,14 @@ namespace APIGateway.Core.MluviiClient
         }
 
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
-            int limit = 10000, int offset = 0)
+            int limit = 1000, int offset = 0)
         {
             var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}?limit={limit}&offset={offset}", Method.GET);
             return await ExecuteAsync<List<Contact>>(request, true);
         }
 
         public async Task GetContactsPaged(Func<(List<Contact> value, IRestResponse response), Task> pageAction, int departmentId,
-            int limit = 10000, int delayMiliseconds = 200)
+            int limit = 1000, int delayMiliseconds = 200)
         {
             var result = new List<SessionModel>();
             var currentOffset = 0;
