@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using System.Web;
 using APIGateway.Core.Cache;
 using APIGateway.Core.MluviiClient.Models;
+using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using mluvii.ApiModels.Campaigns;
 using mluvii.ApiModels.Emails;
@@ -24,9 +26,10 @@ namespace APIGateway.Core.MluviiClient
         Task<IRestResponse> AddContactToCampaign(int campaignId, int contactId);
         Task<IRestResponse> AddContactToCampaign(int campaignId, List<int> contactIds);
         Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(long campaignId, long currentOffset, long limit = 1000);
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000);
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000);
-        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000);
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, int limit = 1000000, int offset = 0);
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, string phoneFilter, int limit = 1000000, int offset = 0);
+        Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId, List<string> phoneFilter, int limit = 1000000, int offset = 0);
+        Task GetContactsPaged(Func<(List<Contact> value, IRestResponse response), Task> pageAction, int departmentId, int limit = 10000, int delayMiliseconds = 200);
         Task<(int? contactId, IRestResponse response)> CreateContact(int departmentId, Dictionary<string, string> contact);
         Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId, List<Dictionary<string, string>> contacts);
         Task<(List<Contact> contact, IRestResponse response)> GetContact(long contactId, long departmentId);
@@ -162,7 +165,7 @@ namespace APIGateway.Core.MluviiClient
             return await ExecuteAsync<List<CampaignIdentity>>(request, false);
         }
 
-        public async Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000)
+        public async Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task<bool>> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000)
         {
             var result = new List<SessionModel>();
             long currentOffset = 0;
@@ -181,22 +184,41 @@ namespace APIGateway.Core.MluviiClient
         }
 
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
-            int limit = 1000000)
+            int limit = 10000, int offset = 0)
         {
-            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}", Method.GET);
+            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}?limit={limit}&offset={offset}", Method.GET);
             return await ExecuteAsync<List<Contact>>(request, true);
         }
 
-        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
-            string phoneFilter, int limit = 1000000)
+        public async Task GetContactsPaged(Func<(List<Contact> value, IRestResponse response), Task> pageAction, int departmentId,
+            int limit = 10000, int delayMiliseconds = 200)
         {
-            return await GetContacts(departmentId, new List<string> { phoneFilter }, limit);
+            var result = new List<SessionModel>();
+            var currentOffset = 0;
+            do
+            {
+                var res = await GetContacts(departmentId, limit, currentOffset);
+                await pageAction(res);
+                currentOffset += limit;
+
+                if (res.contactIds == null || res.contactIds.Count == 0)
+                    return;
+
+                if (delayMiliseconds > 0)
+                    await Task.Delay(delayMiliseconds);
+            } while (result.Count == 0);
         }
 
         public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
-            List<string> phoneFilter, int limit = 1000000)
+            string phoneFilter, int limit = 1000000, int offset = 0)
         {
-            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}", Method.GET);
+            return await GetContacts(departmentId, new List<string> { phoneFilter }, limit, offset);
+        }
+
+        public async Task<(List<Contact> contactIds, IRestResponse response)> GetContacts(int departmentId,
+            List<string> phoneFilter, int limit = 1000000, int offset = 0)
+        {
+            var request = await CreateRequest($"api/{Version}/Contacts/departments/{departmentId}?limit={limit}&offset={offset}", Method.GET);
             var contacts = await ExecuteAsync<List<Contact>>(request, true);
 
             contacts.Value = contacts.Value
