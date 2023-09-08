@@ -211,7 +211,7 @@ namespace APIGateway.Core.MluviiClient
                 await pageAction(res);
                 currentOffset += limit;
 
-                if (res.contactIds == null || res.contactIds.Count == 0)
+                if (res.contactIds == null || res.contactIds.Count == 0 || res.contactIds.Count < limit)
                     return;
 
                 if (delayMiliseconds > 0)
