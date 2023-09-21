@@ -386,7 +386,7 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<(List<SessionModel> value, IRestResponse response)> GetSessions(DateTime? startedFrom = null,
             DateTime? startedTo = null, DateTime? endedFrom = null, DateTime? endedTo = null, string[] channel = null,
-            string[] source = null, bool verbose = false, int limit = 100000, int? offset = null, string[] status = null)
+            string[] source = null, bool verbose = false, int limit = 10000, int? offset = null, string[] status = null)
         {
             var url = $"/api/{Version}/Sessions";
 
