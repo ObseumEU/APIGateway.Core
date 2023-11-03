@@ -515,7 +515,10 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<(List<User> value, IRestResponse response)> GetAllUsers()
         {
-            _log.LogInformation("GET all users");
+            if (_log != null)
+            {
+                _log.LogInformation("GET all users");
+            }
             var request = await CreateRequest($"api/{Version}/users", Method.GET);
             return await ExecuteAsync<List<User>>(request, false);
         }
@@ -643,7 +646,10 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<(User value, IRestResponse response)> GetUser(long id)
         {
-            _log.LogInformation($"GET user {id}");
+            if (_log != null)
+            {
+                _log.LogInformation($"GET user {id}");
+            }
             var request = await CreateRequest($"api/{Version}/users/{id}", Method.GET);
             return await ExecuteAsync<User>(request, true);
         }

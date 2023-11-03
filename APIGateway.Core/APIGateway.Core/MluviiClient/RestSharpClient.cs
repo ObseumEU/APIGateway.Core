@@ -3,12 +3,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using APIGateway.Core.Cache;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using RestSharp;
 using RestSharp.Deserializers;
 using RestSharp.Serializers;
@@ -107,7 +105,7 @@ namespace APIGateway.Core.MluviiClient
             bool logVerbose = false)
         {
             var sw = Stopwatch.StartNew();
-           
+
             if (AutoRetry)
             {
                 IRestResponse<T> response = null;
@@ -116,8 +114,14 @@ namespace APIGateway.Core.MluviiClient
                     response = await base.ExecuteAsync<T>(request);
                     sw.Stop();
                     if (logVerbose)
-                        _log.LogInformation(
-                            $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
+                    {
+                        if (_log != null)
+                        {
+                            _log.LogInformation(
+                                $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
+
+                        }
+                    }
 
                     if (response.IsSuccessful)
                     {
@@ -134,14 +138,18 @@ namespace APIGateway.Core.MluviiClient
                 var response = await base.ExecuteAsync<T>(request);
                 sw.Stop();
                 if (logVerbose)
-                    _log.LogInformation(
-                        $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
-
+                {
+                    if (_log != null)
+                    {
+                        _log.LogInformation(
+                            $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
+                    }
+                }
                 if (!(response.IsSuccessful))
                 {
                     LogError(BaseUrl, request, response);
                 }
-               
+
                 return (response.Data, response);
             }
         }
@@ -158,9 +166,13 @@ namespace APIGateway.Core.MluviiClient
                     response = await base.ExecuteAsync(request);
                     sw.Stop();
                     if (logVerbose)
-                        _log.LogInformation(
+                    {
+                        if (_log != null)
+                        {
+                            _log.LogInformation(
                             $"RequestUrl: {BuildUri(request)} RequestBody: {JsonConvert.SerializeObject(request.Body.Value)} Params:{request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
-
+                        }
+                    }
                     if (response.IsSuccessful)
                     {
                         return (response.Content, response);
@@ -176,9 +188,13 @@ namespace APIGateway.Core.MluviiClient
                 var response = await base.ExecuteAsync(request);
                 sw.Stop();
                 if (logVerbose)
-                    _log.LogInformation(
+                {
+                    if (_log != null)
+                    {
+                        _log.LogInformation(
                         $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body?.Value?.ToString()} RequestBody: {request?.Parameters?.FirstOrDefault()?.Value} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
-
+                    }
+                }
                 if (!(response.IsSuccessful))
                     LogError(BaseUrl, request, response);
 
@@ -187,9 +203,9 @@ namespace APIGateway.Core.MluviiClient
             }
         }
 
-            public async Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, double minutes = 5,
-            bool logVerbose = false)
-            where T : class, new()
+        public async Task<T> GetFromCacheAsync<T>(IRestRequest request, string cacheKey, double minutes = 5,
+        bool logVerbose = false)
+        where T : class, new()
         {
             var sw = Stopwatch.StartNew();
             var item = _cache.Get<T>(cacheKey);
@@ -198,8 +214,13 @@ namespace APIGateway.Core.MluviiClient
                 var response = await base.ExecuteAsync<T>(request);
                 sw.Stop();
                 if (logVerbose)
-                    _log.LogInformation(
+                {
+                    if (_log != null)
+                    {
+                        _log.LogInformation(
                         $"RequestUrl: {BuildUri(request)} RequestBody: {request.Body} Response Content: {response.Content} StatusCode: {response.StatusCode} Elapsed:{sw.Elapsed}");
+                    }
+                }
 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
@@ -246,7 +267,10 @@ namespace APIGateway.Core.MluviiClient
             }
 
             //Log the exception and info message
-            _log.LogError(ex, info);
+            if (_log != null)
+            {
+                _log.LogError(ex, info);
+            }
         }
     }
 }
