@@ -168,7 +168,7 @@ namespace APIGateway.Core.MluviiClient
         public async Task<(List<CampaignIdentity> identities, IRestResponse response)> GetCampaignIndetities(
             long campaignId, long currentOffset, long limit = 1000)
         {
-            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities?offset={currentOffset}$limit={limit}", Method.GET);
+            var request = await CreateRequest($"api/{Version}/Campaigns/{campaignId}/identities?offset={currentOffset}&limit={limit}", Method.GET);
             return await ExecuteAsync<List<CampaignIdentity>>(request, false);
         }
 
