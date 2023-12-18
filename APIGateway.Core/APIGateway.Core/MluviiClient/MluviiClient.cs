@@ -34,6 +34,7 @@ namespace APIGateway.Core.MluviiClient
         Task<(List<int> contactIds, IRestResponse response)> CreateContact(int departmentId, List<Dictionary<string, string>> contacts);
         Task<(List<Contact> contact, IRestResponse response)> GetContact(long contactId, long departmentId);
         Task<(List<User> value, IRestResponse response)> GetAllUsers();
+        Task<(List<User> value, IRestResponse response)> GetAllUsers(int companyId);
         Task<IRestResponse> AddUsers(int companyId, User user);
         Task<IRestResponse> AddTag(int departmentId, CreateTagModel tag);
         Task<(List<TagModel> value, IRestResponse response)> GetAllTags();
@@ -97,6 +98,10 @@ namespace APIGateway.Core.MluviiClient
             int delayMiliseconds = 200);
         Task GetCampaignIndetitiesPaged(Func<(List<CampaignIdentity> value, IRestResponse response), Task<bool>> pageAction, long campaignId, int delayMiliseconds = 200, long limit = 1000);
         Task<(User value, IRestResponse response)> GetUser(long id);
+
+        Task<(OperatorStatesModel value, IRestResponse response)> GetOperatorStates(int userId, DateTime from, DateTime to, int limit = 200, int page = 0, bool verbose = false);
+
+        Task GetOperatorStatesPaged(Func<(OperatorStatesModel value, IRestResponse response), Task> pageAction, int userId, DateTime from, DateTime to, int pageLimit = 200, bool verbose = false, int delayMiliseconds = 100);
     }
 
     public class MluviiClient : BaseClient, IMluviiUserClient, IMluviiClient
@@ -523,6 +528,16 @@ namespace APIGateway.Core.MluviiClient
             return await ExecuteAsync<List<User>>(request, false);
         }
 
+        public async Task<(List<User> value, IRestResponse response)> GetAllUsers(int companyId)
+        {
+            if (_log != null)
+            {
+                _log.LogInformation($"GET all users for company {companyId}");
+            }
+            var request = await CreateRequest($"api/{Version}/users?companyId={companyId}", Method.GET);
+            return await ExecuteAsync<List<User>>(request, false);
+        }
+
         public async Task<IRestResponse> AddUsers(int companyId, User user)
         {
             var request = await CreateRequest($"api/{Version}/users?companyId={companyId}", Method.POST);
@@ -668,7 +683,39 @@ namespace APIGateway.Core.MluviiClient
             return (await ExecuteAsync<object>(request, verbose)).Response;
         }
 
+        public async Task<(OperatorStatesModel value, IRestResponse response)> GetOperatorStates(int userId, DateTime from, DateTime to, int limit = 200, int page = 1, bool verbose = false)
+        {
+            if (_log != null)
+            {
+                _log.LogInformation($"GetOperatorState {userId}");
+            }
+            var reqstr = $"/api/{Version}/Users/{userId}/operatorStates";
+            var request = await CreateRequest(reqstr, Method.GET);
+            request.AddQueryParameter("DateLimit", to.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fff"), true);
+            request.AddQueryParameter("LastModified", from.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fff"), true);
+            request.AddQueryParameter("Limit", limit.ToString());
+            request.AddQueryParameter("Page", page.ToString());
 
+            return await ExecuteAsync<OperatorStatesModel>(request, true);
+        }
+
+        public async Task GetOperatorStatesPaged(Func<(OperatorStatesModel value, IRestResponse response), Task> pageAction, int userId, DateTime from, DateTime to, int pageLimit = 500, bool verbose = false, int delayMiliseconds = 100)
+        {
+            var operatorStatsInfo = await GetOperatorStates(userId, from, to, 5, 1, true); //Because stupid mluvii API need make first request to know how mutch is in total count and how many pages. Uhhh Hardcoded i want only one record. Usless one
+            var totalCount = operatorStatsInfo.value.TotalCount;
+            var maxPages = totalCount / pageLimit;
+                
+            var currentPage = 1;
+            do
+            {
+                var res = await GetOperatorStates(userId, from, to, pageLimit, currentPage, verbose);;
+                await pageAction(res);
+                currentPage += 1;
+
+                if (delayMiliseconds > 0)
+                    await Task.Delay(delayMiliseconds);
+            } while (maxPages > currentPage);
+        }
     }
         
     public interface IMluviiUserClient
