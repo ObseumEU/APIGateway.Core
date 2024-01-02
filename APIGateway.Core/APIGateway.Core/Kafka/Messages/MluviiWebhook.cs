@@ -1,9 +1,8 @@
-﻿using System.IO;
-using APIGateway.Core.Controllers.Webhook;
-using Newtonsoft.Json.Linq;
+﻿using System;
 
 namespace APIGateway.Core.Kafka.Messages
 {
+    [Obsolete]
     public class WebhookEvent
     {
         public string EventType { get; set; }
