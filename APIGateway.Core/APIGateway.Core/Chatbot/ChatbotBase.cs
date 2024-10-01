@@ -111,6 +111,12 @@ namespace APIGateway.Core.Chatbot
                 Elements.SendActivity.CreateForwardActivity(sessionId, userId));
         }
 
+        public async Task ForwardRemote(long sessionId, int userId, int chatbotId)
+        {
+            await mluviiClient.SendChatbotActivity(chatbotId,
+                Elements.SendActivity.CreateForwardActivity(sessionId, userId));
+        }
+
         public async Task<bool> IsHealth()
         {
             var client = new RestClient(_coreOptions.Domain);

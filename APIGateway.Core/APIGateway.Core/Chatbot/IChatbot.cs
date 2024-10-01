@@ -12,5 +12,7 @@ namespace APIGateway.Core.Chatbot
         Task SendActivity(object activity);
         Task<bool> IsHealth();
         Task Forward(long sessionId, int userId);
+        Task ForwardRemote(long sessionId, int userId, int chatbotId);
+
     }
 }
