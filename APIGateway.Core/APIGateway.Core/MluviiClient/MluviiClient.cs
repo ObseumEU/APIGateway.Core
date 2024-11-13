@@ -513,6 +513,10 @@ namespace APIGateway.Core.MluviiClient
 
         public async Task<IRestResponse> SendChatbotActivity(int chatbotId, object activity)
         {
+            if (_log != null)
+            {
+                _log.LogInformation($"/api/{Version}/Chatbot/{chatbotId}/activity Username:" + _credentials.Name );
+            }
             var request = await CreateRequest($"/api/{Version}/Chatbot/{chatbotId}/activity", Method.POST);
             request.AddJsonBody(activity);
             return (await ExecuteAsync<object>(request)).Response;
