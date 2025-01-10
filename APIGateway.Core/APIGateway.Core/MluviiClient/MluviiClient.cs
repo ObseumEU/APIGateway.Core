@@ -102,6 +102,7 @@ namespace APIGateway.Core.MluviiClient
         Task<(OperatorStatesModel value, IRestResponse response)> GetOperatorStates(int userId, DateTime from, DateTime to, int limit = 200, int page = 0, bool verbose = false);
 
         Task GetOperatorStatesPaged(Func<(OperatorStatesModel value, IRestResponse response), Task> pageAction, int userId, DateTime from, DateTime to, int pageLimit = 200, bool verbose = false, int delayMiliseconds = 100);
+        Task<IRestResponse> Forward(long sessionId, int userId);
     }
 
     public class MluviiClient : BaseClient, IMluviiUserClient, IMluviiClient
@@ -520,6 +521,17 @@ namespace APIGateway.Core.MluviiClient
             var request = await CreateRequest($"/api/{Version}/Chatbot/{chatbotId}/activity", Method.POST);
             request.AddJsonBody(activity);
             return (await ExecuteAsync<object>(request)).Response;
+        }
+
+        public async Task<IRestResponse> Forward(long sessionId, int userId)
+        {
+            var request = await CreateRequest($"api/{Version}/Sessions/{sessionId}/forward", Method.POST);
+            request.AddJsonBody(new
+            {
+                userId = userId,
+                note = "Forwarded automatically"
+            });
+            return (await ExecuteAsync<object>(request, true)).Response;
         }
 
         public async Task<(List<User> value, IRestResponse response)> GetAllUsers()
